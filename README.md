@@ -56,8 +56,8 @@ Think of it as an exam:
 | The examiner | The EMBench program | the `embench/` folder |
 | The report card | A table: how many tasks passed per category, and what went wrong | `report.md`, generated after every grading run |
 
-**The exam itself is checked too.** Every task's model answer must get full marks. A blank sheet, a sheet with the last step missing, or a sheet with a typical mistake (each task ships with such examples) must all fail.
-This makes sure the examiner neither marks correct work as wrong nor lets mistakes slip through.
+**The exam itself is checked too.** Every task's model answer must get full marks. A blank sheet, a sheet with the last step missing, a sheet without the tool results the grading needs, and a sheet with a typical mistake (each task ships with such examples) must all fail.
+This catches broken tasks and these known kinds of mistakes. It **cannot prove that every wrong answer will be caught**: if a task's checks are written loosely, the self-check won't notice. That is why each task should ship counterexamples of its own.
 
 > Note: the seed task instructions are written in Chinese, because they target Chinese-language assistants. Command output is currently in Chinese as well.
 
@@ -131,7 +131,7 @@ After a few seconds the last line reads:
 74/74 题通过自检
 ```
 
-("74/74 tasks passed the self-check".) Every task in the seed set is sound: model answers get full marks, and wrong answers are caught.
+("74/74 tasks passed the self-check".) Every task in the seed set passed: its model answer gets full marks, and the known kinds of wrong answers (blank, truncated, missing evidence, and the task's own counterexamples) are caught.
 
 ### Step 6: Run your first grading
 
@@ -150,7 +150,7 @@ The first should pass 100%, the second 0%. The report card is printed in the win
 Here is the report card produced from the sample answer sheets that ship with the repository (used again in section 6):
 
 ```
-**pass@1 = 33.3%**（Wilson 95% CI 6.1% – 79.2%）
+**pass@1 = 33.3%**（Wilson 95% CI 6.1% – 79.2%，按 3 道题计）
 
 | family      | 题数 | pass@1 | l1_tool | l2_args | l3_value | answer | efficiency | 调用数 | 冗余 |
 | name2smiles | 2    | 50.0%  | 100.0%  | 100.0%  | —        | 50.0%  | 100.0%     | 1.0    | 0.0  |
@@ -166,7 +166,7 @@ What each term means:
 | Term | Meaning |
 |---|---|
 | **pass@1** | **Pass rate.** A task passes only if all of its required checks pass. 33.3% means 1 of 3 tasks passed |
-| **Wilson 95% CI** | **Plausible range.** With few tasks, a score has some luck in it. "6.1% – 79.2%" means that on another set of similar tasks, the true level would very likely fall in this range. More tasks give a narrower range |
+| **Wilson 95% CI** | **Plausible range.** With few tasks, a score has some luck in it. "6.1% – 79.2%" means that on another set of similar tasks, the true level would very likely fall in this range. It is computed over **tasks** ("按 3 道题计" = "based on 3 tasks"): more tasks give a narrower range, but repeating the same tasks does not |
 | family | Task category |
 | 题数 | Number of tasks |
 | l1_tool | **Tool choice:** were the required tools used, in the right order? |
@@ -231,7 +231,7 @@ An answer sheet is a `.json` text file (editable in Notepad) recording what the 
 | `steps` | Every tool call the AI made, **in order**, one entry per call |
 | └ `tool` | Tool name; must match a name in [section 8](#8-tools-your-ai-needs-to-provide) |
 | └ `args` | What was passed to the tool |
-| └ `result` | What the tool returned (copy as is). You may omit it; the "results" checks are then skipped |
+| └ `result` | What the tool returned (copy as is). **Don't leave it out:** if a check needs it to verify the numbers, a missing result means the task fails ("缺少证据" = "missing evidence") |
 | `final_answer` | The AI's full final reply to the user |
 
 > Note: in this example the SMILES in the reply is written differently from the one the tool returned, but it is the same molecule, so **it is not marked wrong**.
@@ -250,6 +250,8 @@ examples/my_agent_outputs/
 └── ob-kj/
     └── tnt.json      ← for task embench/tasks/ob-kj/tnt/
 ```
+
+If your AI did a task several times (see `-k` below), give **each attempt its own file**: `<category>/<task>/trial_0.json`, `trial_1.json`, … A single `<task>.json` counts as one attempt only. It is never reused as several.
 
 Then run the command below. `-t` lists which tasks to grade; without `-t` every task is graded, and tasks without an answer sheet count as blank:
 
@@ -295,7 +297,8 @@ Grading does **not** forgive:
 - Skipping a required step, or doing steps in the wrong order
 - Passing the wrong molecule, quantity or option to a tool
 - In design tasks, leaving a candidate unanalyzed, or analyzing made-up molecules
-- Not telling the user the conclusion (the structure, or the recommended candidate)
+- Not telling the user the conclusion (the structure, or the recommended candidate). In design tasks the reply must **name a candidate that was actually generated**: refusing ("I don't recommend any candidate"), a vague "the first one", or a made-up molecule all fail
+- Missing evidence: when a check needs a tool result that the answer sheet doesn't contain, the task fails instead of being skipped
 
 ## 8. Tools your AI needs to provide
 
@@ -349,13 +352,13 @@ The same molecule can be written as many different SMILES strings. Without RDKit
 Open `report.md` in an editor that supports UTF-8 (e.g. VS Code, Typora), or run `chcp 65001` in the command window first.
 
 **The same AI gives different results each time?**
-That's normal: language models are random to some degree. Use `-k 3` to run each task 3 times and look at pass^3 (the share solved every time) to see how stable it is.
+That's normal: language models are random to some degree. Let your AI do each task 3 times, save every attempt as its own answer sheet (`trial_0.json` … `trial_2.json`), grade with `-k 3`, and look at pass^3 (the share solved every time). The built-in demo students (`oracle`, `nop`) always give the same answer, so they refuse `-k` above 1.
 
 **If the grading rules change, does the AI have to retake the exam?**
 No. Run `python -m embench score embench\jobs\<some-run>` to regrade with the new rules. The answer sheets stay the same.
 
 **Grading was interrupted?**
-Run the same command again with the same `--job` name. Tasks already graded are skipped automatically.
+Run the same command again with the same `--job` name. Tasks already graded are skipped automatically. A job belongs to one AI: if you grade a **different** AI under an existing job name, EMBench refuses rather than mixing up the two AIs' results. Use a new `--job` name, or add `--force` to wipe that job and start over.
 
 ## 11. License
 

@@ -37,9 +37,11 @@ def job_markdown(job_dir: Path) -> str:
         "",
         f"- agent: **{_label(cfg)}**",
         f"- git: `{env['git_commit']}`{' (dirty)' if env['git_dirty'] else ''} · python {env['python']} · rdkit {env['rdkit']}",
-        f"- 任务 {o['n_tasks']} 道 × {k} 次 = {o['n_trials']} trial；错误 {o['error_trials']}；数据不全 {o['incomplete_trials']}",
+        f"- 任务 {o['n_tasks']} 道 × {k} 次 = {o['n_trials']} trial；错误 {o['error_trials']}；缺少证据 {o['incomplete_trials']}"
+        + (f"；⚠ 重复轨迹 {o['duplicate_trials']}" if o.get("duplicate_trials") else "")
+        + (f"；⚠ 无 agent 身份记录 {o['unverified_agent_trials']}" if o.get("unverified_agent_trials") else ""),
         "",
-        f"**pass@1 = {_pct(o['pass@1'])}**（Wilson 95% CI {_pct(o['wilson_95'][0])} – {_pct(o['wilson_95'][1])}）"
+        f"**pass@1 = {_pct(o['pass@1'])}**（Wilson 95% CI {_pct(o['wilson_95'][0])} – {_pct(o['wilson_95'][1])}，按 {o['n_tasks']} 道题计）"
         + (f" · pass@{k} = {_pct(o.get(f'pass@{k}'))} · pass^{k} = {_pct(o.get(f'pass^{k}'))}" if k > 1 else ""),
         "",
         "| family | 题数 | pass@1 | " + " | ".join(DIM_ORDER) + " | 调用数 | 冗余 | 耗时(s) |",

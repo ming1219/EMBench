@@ -89,9 +89,8 @@ class TestEndToEndJob(unittest.TestCase):
         return asyncio.run(run_job(agent, self.tasks, self.jobs / name, n_trials=k, log=lambda *_: None))
 
     def test_oracle_all_pass_nop_all_fail(self):
-        r = self.run_agent(OracleAgent(), "oracle", k=2)
+        r = self.run_agent(OracleAgent(), "oracle")
         self.assertEqual(r["overall"]["pass@1"], 1.0)
-        self.assertEqual(r["overall"]["pass^2"], 1.0)
         self.assertTrue((self.jobs / "oracle" / "report.md").is_file())
         r = self.run_agent(NopAgent(), "nop")
         self.assertEqual(r["overall"]["pass@1"], 0.0)
@@ -105,6 +104,18 @@ class TestEndToEndJob(unittest.TestCase):
         self.assertTrue(per[f"{SAMPLE}#0"]["pass"])
         self.assertEqual(sum(v["pass"] for v in per.values()), 1)  # 其余题没有文件 → 判失败
         self.assertEqual(r["overall"]["error_trials"], len(self.tasks) - 1)
+
+    def test_pass_hat_k_with_independent_trial_records(self):
+        # 多次试验必须各有独立记录：第 0 次是参考答案、第 1 次交白卷 → pass@2=1，pass^2=0
+        src = self.jobs / "trials_src"
+        for t in self.tasks:
+            d = src / t.id
+            d.mkdir(parents=True)
+            shutil.copy(t.solution_path, d / "trial_0.json")
+            (d / "trial_1.json").write_text(json.dumps({"steps": [], "final_answer": ""}), encoding="utf-8")
+        r = self.run_agent(ReplayAgent(str(src)), "two_trials", k=2)["overall"]
+        self.assertEqual((r["pass@1"], r["pass@2"], r["pass^2"]), (0.5, 1.0, 0.0))
+        self.assertEqual(r["duplicate_trials"], 0)
 
     def test_rescore_and_resume(self):
         self.run_agent(OracleAgent(), "j")

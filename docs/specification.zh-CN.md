@@ -22,12 +22,12 @@ python -m unittest discover -s embench/tests -t .  # 单元测试
 |---|---|
 | `-t` | 任务 id 的 glob 或 family 名：`ob-kj`、`"design-*/*"`、`name2smiles/tnt`；缺省 = 全部 |
 | `-a` | `oracle`（参考答案）/ `nop`（空白卷）/ `replay`（回放自备轨迹） |
-| `--replay-src` | replay 的轨迹目录，结构 `<family>/<instance>.json` |
-| `-k` | 每题重复次数，>1 时报告 pass@k 与 pass^k |
+| `--replay-src` | replay 的轨迹目录：`<family>/<instance>.json`（一次试验），或 `<family>/<instance>/trial_<k>.json`（每次试验一份） |
+| `-k` | 每题重复次数，>1 时报告 pass@k 与 pass^k。确定性的 agent（`oracle`、`nop`）不允许 k > 1 |
 | `-n` | 并发数 |
-| `--job` | job 名；同名再跑 = 续跑（已有 reward.json 的 trial 跳过） |
+| `--job` | job 名；同名再跑 = 续跑（已有 reward.json 的 trial 跳过）。只有**同一个 agent** 且题目定义没变时才允许续跑，否则直接拒绝 |
 | `--jobs-dir` | job 输出目录，缺省 `embench/jobs/` |
-| `--force` | 忽略已有结果，全部重跑 |
+| `--force` | 清空该 job 已有的全部结果，从头重跑 |
 
 ## 2. 目录结构
 
@@ -67,7 +67,7 @@ embench/
 }
 ```
 
-- `steps` 按调用顺序排列；`result` 省略表示没有记录结果，此时依赖结果的检查会被跳过（不算失败，但 reward 标 `incomplete`）
+- `steps` 按调用顺序排列；`result` 省略表示没有记录结果。需要它的 required 检查无法判定，这道题会**判不通过**（缺少证据），除非题目显式设置 `allow_incomplete`（见第 4 节）
 - `schema_version`、`task_id`、`error`、`metrics` 可省略；replay 会自动补上 `task_id`
 - `metrics` 中的 `wall_time_s` / `input_tokens` / `output_tokens` 若提供，会出现在报告的成本统计里
 
@@ -86,6 +86,9 @@ legacy = { exp = "Exp6_ob_kj", key = "TNT" }   # 可选：题目来源标记
 
 [agent]
 timeout_sec = 300
+
+[verifier]
+# allow_incomplete = true   # 可选：缺证据的 required 检查记为跳过，而不是判失败
 
 [[verifier.checks]]
 id = "trajectory"
@@ -129,7 +132,8 @@ max_calls = 2
 | `tool_result_values` | l3_value | 工具输出字段与参考值一致 | `tool`, `expected`, `rel_tol`, `abs_tol`, `match_smiles`, `which` |
 | `generation_output` | l3_value | 生成数 ≥ min_count，结果含所需性质 | `min_count`, `required_properties` |
 | `candidate_coverage` | coverage, consistency | 每个生成候选是否都走完下游；下游输入是否来自生成结果 | `downstream`, `source_tool` |
-| `answer_contains` | answer | 最终回答包含关键词 | `any_of`, `all_of`, `min_length` |
+| `answer_contains` | answer | 最终回答包含关键词，且不含任何禁用说法。注意是子串匹配：「不推荐」也包含「推荐」，拒答说法要写进 `none_of` | `any_of`, `all_of`, `none_of`, `min_length` |
+| `answer_mentions_candidate` | answer | 最终回答必须点名（给出 SMILES）至少 `min_count` 个本次真实生成过的候选；拒答、空泛回答、编造的分子都判错 | `source_tool`, `source_field`, `min_count` |
 | `answer_smiles` | answer | 最终回答包含正确分子（canonical 比较） | `expected`, `mode` |
 | `call_budget` | efficiency | 调用数预算（软指标） | `max_calls` |
 | `python` | 自定义 | 逃生口：调用题目目录下 `tests/verify.py` 的 `verify(traj, task, params)` | `path`, `function` |
@@ -153,7 +157,7 @@ max_calls = 2
 
 ## 5. 判分语义
 
-- **pass**：所有 `required` 检查都通过。被跳过的检查不算失败，但 reward 会标记 `incomplete: true`
+- **pass**：所有 `required` 检查都通过，**且没有任何一项缺少证据**。required 检查无法判定时（例如轨迹没有记录工具结果），整题判不通过，reward 在 `missing_evidence` 中列出这些检查，并标记 `incomplete: true`。题目可以用 `[verifier] allow_incomplete = true` 显式放宽
 - **reward** = float(pass)，二值主指标
 - **dimensions**：各维度在所有检查上的均值，用于诊断
 
@@ -174,8 +178,11 @@ max_calls = 2
 | pass@1 | 每题通过率的均值 |
 | pass@k | k 次中至少一次通过（Chen et al. 2021 无偏估计），`-k` > 1 时输出 |
 | pass^k | k 次全部通过（τ-bench 一致性指标），衡量稳定性 |
-| Wilson 95% CI | 小样本下的通过率置信区间 |
+| Wilson 95% CI | 通过率的置信区间。**样本单位是题目**：每道题按其通过率计入，重复试验不会让区间变窄 |
 | 维度均值 / 平均调用数 / 冗余 / 耗时 / token | 诊断与成本 |
+| 重复 / 无身份的 trial | 与同题前一次试验轨迹完全相同的 trial，以及没有记录 agent 身份的 trial（以警告形式显示） |
+
+**job 完整性**：每个 `reward.json` 都记录产生它的 agent。用不同的 agent 续跑某个 job，或在题目改过之后续跑，都会被拒绝；汇总时，凡是不属于该 job 的 agent 产生的 trial，一律拒绝计入。
 
 ## 7. 维护流程
 
@@ -203,5 +210,8 @@ python -m unittest discover -s embench/tests -t .
 | oracle 参考轨迹通过全部检查 | 题目无解，或检查写错 |
 | 空轨迹必须失败 | 什么都不做也能得分 |
 | 去掉最后一步的 oracle 必须失败 | 检查过松，最后一步没有被任何检查约束 |
+| 去掉全部工具结果的 oracle 必须失败（只要有 required 检查因此缺少证据） | 没有证据也算通过 |
 | `solution/negatives/` 中每个反例必须失败 | 已知的典型错误被放过 |
 | registry.json 与目录一一对应且 hash 最新 | 题库索引过期 |
+
+这些自检证明的是：参考答案能通过，以及上面列出的几类错法会被抓出。它们**不能**证明所有错误答案都会被判错：检查写得太松的题照样能通过自检。你关心哪些错法，就把对应的反例放进 `solution/negatives/`。

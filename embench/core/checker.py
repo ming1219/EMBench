@@ -14,7 +14,12 @@ verifier 正确性（不需要 LLM，秒级完成）
   - oracle 轨迹：pass=True、所有检查（含软指标）都通过、无 skipped
   - nop 空轨迹：必须 pass=False（防「什么都不做也得分」）
   - 截断 oracle（去掉最后一步）：必须 pass=False（防检查项过松）
+  - 去掉全部工具结果的 oracle：只要有 required 检查因此缺少证据，就必须 pass=False
+    （防「没有证据也算通过」；题目显式 allow_incomplete = true 时除外）
   - solution/negatives/*.json：手写反例，必须 pass=False
+
+注意：这些自检只证明「参考答案能通过」以及「上述几类已知错法会被抓出」，
+不能证明任意错误答案都会被判错——检查项本身写得弱，自检也发现不了。
 """
 from __future__ import annotations
 
@@ -56,6 +61,13 @@ def validate_config(task: Task) -> list[str]:
         errs.append(f"[task].family={meta['family']!r} 与目录不符")
     if not isinstance(task.agent_config.get("timeout_sec"), (int, float)):
         errs.append("[agent].timeout_sec 缺失或非数值")
+
+    verifier_cfg = cfg.get("verifier", {})
+    unknown_v = set(verifier_cfg) - {"checks", "allow_incomplete"}
+    if unknown_v:
+        errs.append(f"[verifier] 未知字段 {sorted(unknown_v)}")
+    if "allow_incomplete" in verifier_cfg and not isinstance(verifier_cfg["allow_incomplete"], bool):
+        errs.append("[verifier].allow_incomplete 应为 true / false")
 
     checks = task.checks
     if not checks:
@@ -110,6 +122,14 @@ def validate_verifier(task: Task) -> list[str]:
         truncated.steps = truncated.steps[:-1]
         if verify(task, truncated)["pass"]:
             errs.append("截断 oracle（去掉最后一步）仍通过 —— 最后一步没被任何检查约束")
+
+    if oracle.has_any_result:
+        stripped = Trajectory.from_dict(oracle.to_dict())
+        for st in stripped.steps:
+            st.result, st.has_result = None, False
+        rs = verify(task, stripped)
+        if rs["incomplete"] and rs["pass"]:
+            errs.append(f"去掉全部工具结果后仍通过（缺证据的检查: {rs['missing_evidence']}）—— 没有证据也算通过")
 
     for neg in task.negative_paths:
         if verify(task, Trajectory.load(neg))["pass"]:

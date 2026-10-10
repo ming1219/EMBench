@@ -446,17 +446,48 @@ def candidate_coverage(traj: Trajectory, p: dict, task) -> CheckResult:
 
 @register(
     "answer_contains",
-    params={"any_of": False, "all_of": False, "min_length": False},
+    params={"any_of": False, "all_of": False, "none_of": False, "min_length": False},
     dimensions=("answer",),
 )
 def answer_contains(traj: Trajectory, p: dict, task) -> CheckResult:
+    """关键词检查。注意子串匹配的局限：「不推荐」也包含「推荐」——
+    用 none_of 排除拒答/否定说法；要判断「推荐了什么」请用 answer_mentions_candidate。"""
     ans = traj.final_answer if isinstance(traj.final_answer, str) else str(traj.final_answer or "")
     if traj.error or len(ans) < p.get("min_length", 0):
         return CheckResult("", "", {"answer": 0.0}, None, True, detail="无有效回答")
+    hit_forbidden = [k for k in p.get("none_of", []) if k in ans]
+    if hit_forbidden:
+        return CheckResult("", "", {"answer": 0.0}, None, True, detail=f"回答含否定/拒答说法 {hit_forbidden}")
     any_of, all_of = p.get("any_of", []), p.get("all_of", [])
     conds = ([any(k in ans for k in any_of)] if any_of else []) + [k in ans for k in all_of]
     score = _ratio(sum(conds), len(conds)) if conds else 1.0
     return CheckResult("", "", {"answer": score}, None, True, detail="ok" if score == 1 else "关键词缺失")
+
+
+@register(
+    "answer_mentions_candidate",
+    params={"source_tool": False, "source_field": False, "min_count": False},
+    dimensions=("answer",),
+)
+def answer_mentions_candidate(traj: Trajectory, p: dict, task) -> CheckResult:
+    """最终回答必须点名（给出 SMILES）至少 min_count 个本次真实生成过的候选。
+
+    比关键词可靠：拒答、空泛推荐、推荐编造的分子都过不了。
+    没记录生成结果时无法判定（缺证据 → 默认判不通过，见 verifier）。
+    """
+    G = _generated_set(traj, p.get("source_tool", "generateAndPredict"), p.get("source_field", "generated_molecules"))
+    if G is None:
+        return CheckResult("", "", {"answer": None}, None, True, detail="未记录生成结果，无法核对回答中的候选")
+    if traj.error:
+        return CheckResult("", "", {"answer": 0.0}, None, True, detail="运行出错，无有效回答")
+    found = extract_smiles(traj.final_answer)
+    named = found & G
+    need = p.get("min_count", 1)
+    fabricated = found - G
+    detail = f"回答点名了 {len(named)} 个生成过的候选（需要 ≥{need}）"
+    if fabricated:
+        detail += f"，另有 {len(fabricated)} 个不在生成结果中的分子"
+    return CheckResult("", "", {"answer": 1.0 if len(named) >= need else 0.0}, None, True, detail=detail)
 
 
 @register(

@@ -50,8 +50,14 @@ description = "每个生成候选都走完 KJ + 逆合成；consistency（下游
 id = "recommend"
 type = "answer_contains"
 any_of = ["推荐", "建议", "最优", "最佳", "首选"]
+none_of = ["无法回答", "无法推荐", "不推荐任何", "没有完成", "未完成", "无法完成", "不能推荐"]
 min_length = 15
-description = "最终回答给出推荐结论"
+description = "最终回答给出推荐结论，且不是拒答/未完成的说法"
+
+[[verifier.checks]]
+id = "recommend_candidate"
+type = "answer_mentions_candidate"
+description = "最终回答必须点名（给出 SMILES）至少一个本次真实生成过的候选"
 
 [[verifier.checks]]
 id = "budget"

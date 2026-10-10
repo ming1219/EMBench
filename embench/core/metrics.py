@@ -6,7 +6,9 @@ Job 级指标聚合
 - pass@1          每题通过率的均值（k 次试验的无偏估计）
 - pass@k          k 次里至少一次通过（Chen et al. 2021 无偏估计）
 - pass^k          k 次全部通过（τ-bench 一致性指标，衡量稳定性）
-- wilson_95       全部 trial 通过率的 Wilson 95% 置信区间（小样本下比 ±σ 更靠谱）
+- wilson_95       通过率的 Wilson 95% 置信区间，**样本单位是题目而不是 trial**：
+                  对同一道题重复试验不会增加样本量（每题按其通过率计入），
+                  因此把同一份轨迹回放 100 次不会让区间变窄
 - dimensions      各维度均值
 - cost            平均工具调用数 / 墙钟 / token
 以及按 family 拆分的同样指标。
@@ -57,13 +59,12 @@ def _summarize(trials: list[dict]) -> dict:
         phk.append(pass_hat_k(n, c, k))
 
     n_trials = len(trials)
-    n_pass = sum(t["reward"]["pass"] for t in trials)
     dims = defaultdict(list)
     for t in trials:
         for d, s in t["reward"]["dimensions"].items():
             dims[d].append(s)
 
-    lo, hi = wilson(n_pass, n_trials)
+    lo, hi = wilson(sum(p1), len(p1))
     out = {
         "n_tasks": len(by_task),
         "n_trials": n_trials,
@@ -75,7 +76,10 @@ def _summarize(trials: list[dict]) -> dict:
         out[f"pass^{k}"] = _mean(phk)
     return out | {
         "wilson_95": [lo, hi],
+        "ci_unit": "task",
         "incomplete_trials": sum(t["reward"].get("incomplete", False) for t in trials),
+        "duplicate_trials": sum(t.get("duplicate", False) for t in trials),
+        "unverified_agent_trials": sum(not t.get("verified_agent", True) for t in trials),
         "error_trials": sum(bool(t["reward"]["stats"].get("error")) for t in trials),
         "dimensions": {d: _mean(v) for d, v in sorted(dims.items())},
         "cost": {

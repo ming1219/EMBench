@@ -22,12 +22,12 @@ python -m unittest discover -s embench/tests -t .    # unit tests
 |---|---|
 | `-t` | Task id glob or family name: `ob-kj`, `"design-*/*"`, `name2smiles/tnt`; default = all |
 | `-a` | `oracle` (reference answers) / `nop` (blank sheet) / `replay` (replay your own trajectories) |
-| `--replay-src` | Trajectory directory for replay, laid out as `<family>/<instance>.json` |
-| `-k` | Trials per task; with k > 1, pass@k and pass^k are reported |
+| `--replay-src` | Trajectory directory for replay: `<family>/<instance>.json` (one trial), or `<family>/<instance>/trial_<k>.json` (one file per trial) |
+| `-k` | Trials per task; with k > 1, pass@k and pass^k are reported. Deterministic agents (`oracle`, `nop`) refuse k > 1 |
 | `-n` | Concurrency |
-| `--job` | Job name; rerunning the same name resumes (trials that already have reward.json are skipped) |
+| `--job` | Job name; rerunning the same name resumes (trials that already have reward.json are skipped). Resuming is only allowed for the **same agent** and unchanged task definitions; otherwise the run is refused |
 | `--jobs-dir` | Output directory for jobs, default `embench/jobs/` |
-| `--force` | Ignore existing results and rerun everything |
+| `--force` | Wipe the job's existing results and start over |
 
 ## 2. Layout
 
@@ -67,7 +67,7 @@ embench/
 }
 ```
 
-- `steps` are in call order. Omitting `result` means no result was recorded; checks that depend on results are then skipped. A skipped check is not a failure, but the reward is flagged `incomplete`
+- `steps` are in call order. Omitting `result` means no result was recorded. A required check that needs it cannot verify the task, which then **fails** (missing evidence), unless the task opts in with `allow_incomplete` (section 4)
 - `schema_version`, `task_id`, `error` and `metrics` are optional; replay fills in `task_id`
 - If `metrics` provides `wall_time_s` / `input_tokens` / `output_tokens`, they appear in the report's cost statistics
 
@@ -86,6 +86,9 @@ legacy = { exp = "Exp6_ob_kj", key = "TNT" }   # optional provenance marker
 
 [agent]
 timeout_sec = 300
+
+[verifier]
+# allow_incomplete = true   # optional: skip (instead of fail) required checks that lack evidence
 
 [[verifier.checks]]
 id = "trajectory"
@@ -129,7 +132,8 @@ Unknown parameters, missing required parameters and unknown check types are all 
 | `tool_result_values` | l3_value | Tool output fields match reference values | `tool`, `expected`, `rel_tol`, `abs_tol`, `match_smiles`, `which` |
 | `generation_output` | l3_value | Number generated ≥ min_count, results include the required properties | `min_count`, `required_properties` |
 | `candidate_coverage` | coverage, consistency | Every generated candidate goes through the downstream tools; downstream inputs come from the generated set | `downstream`, `source_tool` |
-| `answer_contains` | answer | The final reply contains keywords | `any_of`, `all_of`, `min_length` |
+| `answer_contains` | answer | The final reply contains keywords and none of the forbidden phrases. Substring matching: "不推荐" contains "推荐", so list refusals in `none_of` | `any_of`, `all_of`, `none_of`, `min_length` |
+| `answer_mentions_candidate` | answer | The final reply names (by SMILES) at least `min_count` candidates that were actually generated in this run; refusals, vague answers and made-up molecules fail | `source_tool`, `source_field`, `min_count` |
 | `answer_smiles` | answer | The final reply contains the correct molecule (canonical comparison) | `expected`, `mode` |
 | `call_budget` | efficiency | Tool-call budget (soft metric) | `max_calls` |
 | `python` | custom | Escape hatch: calls `verify(traj, task, params)` in the task's `tests/verify.py` | `path`, `function` |
@@ -153,7 +157,7 @@ In `tool_calls_match`, arguments not declared in the expected call are ignored; 
 
 ## 5. Grading semantics
 
-- **pass**: all `required` checks pass. Skipped checks are not failures, but the reward is flagged `incomplete: true`
+- **pass**: every `required` check passes, **and none of them lacks evidence**. A required check that cannot decide (e.g. the trajectory has no tool results) makes the task fail; the reward lists it in `missing_evidence` and sets `incomplete: true`. A task may opt out with `[verifier] allow_incomplete = true`
 - **reward** = float(pass), the binary headline metric
 - **dimensions**: the mean of each dimension over all checks, for diagnosis
 
@@ -174,8 +178,11 @@ In `tool_calls_match`, arguments not declared in the expected call are ignored; 
 | pass@1 | Mean per-task pass rate |
 | pass@k | Solved at least once in k trials (unbiased estimator, Chen et al. 2021); reported when `-k` > 1 |
 | pass^k | Solved in all k trials (consistency metric from τ-bench); measures reliability |
-| Wilson 95% CI | Confidence interval for the pass rate, suited to small samples |
+| Wilson 95% CI | Confidence interval for the pass rate. **The sample unit is the task**: each task contributes its pass rate, so repeating trials never narrows the interval |
 | Dimension means / avg. tool calls / redundancy / time / tokens | Diagnostics and cost |
+| Duplicate / unverified trials | Trials whose trajectory is identical to an earlier trial of the same task, and trials without a recorded agent identity (shown as warnings) |
+
+**Job integrity.** Every `reward.json` records the agent that produced it. Resuming a job with a different agent, or after its tasks changed, is refused. Aggregation rejects any trial produced by an agent other than the job's.
 
 ## 7. Maintenance
 
@@ -203,5 +210,8 @@ python -m unittest discover -s embench/tests -t .
 | The oracle trajectory passes every check | Unsolvable tasks, or wrong checks |
 | An empty trajectory fails | Scoring points for doing nothing |
 | The oracle with its last step removed fails | Overly lenient checks; a last step no check constrains |
+| The oracle with all tool results removed fails, whenever a required check then lacks evidence | Passing without evidence |
 | Every negative in `solution/negatives/` fails | Known typical mistakes slipping through |
 | registry.json matches the directories and its hashes are current | A stale task index |
+
+These checks prove that the reference passes and that the listed kinds of mistakes are caught. They **do not** prove that every wrong answer is caught: a task with loosely written checks still passes the self-check. Add counterexamples under `solution/negatives/` for the mistakes you care about.

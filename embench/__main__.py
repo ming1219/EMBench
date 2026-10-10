@@ -27,7 +27,7 @@ except Exception:
 from .agents import AGENT_NAMES, build_agent
 from .core.checker import REGISTRY_FILE, check_registry, check_task, write_registry
 from .core.report import compare_markdown, job_markdown
-from .core.runner import JOBS_DIR, rescore_job, run_job
+from .core.runner import JOBS_DIR, JobError, rescore_job, run_job
 from .core.task import load_tasks
 
 
@@ -78,8 +78,12 @@ def cmd_run(args) -> int:
     agent = build_agent(args)
     job = args.job or f"{datetime.datetime.now():%Y%m%d_%H%M%S}_{args.agent}"
     job_dir = Path(args.jobs_dir) / job
-    result = asyncio.run(run_job(agent, tasks, job_dir, n_trials=args.n_trials,
-                                 n_concurrent=args.n_concurrent, force=args.force))
+    try:
+        result = asyncio.run(run_job(agent, tasks, job_dir, n_trials=args.n_trials,
+                                     n_concurrent=args.n_concurrent, force=args.force))
+    except JobError as e:
+        print(f"✗ {e}")
+        return 1
     print("\n" + job_markdown(job_dir))
     print(f"结果目录: {job_dir}")
     return 0 if result["overall"]["n_trials"] else 1
@@ -87,7 +91,11 @@ def cmd_run(args) -> int:
 
 def cmd_score(args) -> int:
     job_dir = Path(args.job_dir)
-    rescore_job(job_dir)
+    try:
+        rescore_job(job_dir)
+    except JobError as e:
+        print(f"✗ {e}")
+        return 1
     print(job_markdown(job_dir))
     return 0
 
@@ -130,9 +138,9 @@ def main(argv=None) -> int:
     sp.add_argument("--replay-src", nargs="*", default=None, help="replay 的轨迹目录（结构：<family>/<instance>.json）")
     sp.add_argument("-k", "--n-trials", type=int, default=1, help="每题重复次数（>1 时报告 pass@k / pass^k）")
     sp.add_argument("-n", "--n-concurrent", type=int, default=1)
-    sp.add_argument("--job", default=None, help="job 名（缺省按时间戳）；同名再跑 = 续跑")
+    sp.add_argument("--job", default=None, help="job 名（缺省按时间戳）；同名再跑 = 续跑（必须是同一个 agent）")
     sp.add_argument("--jobs-dir", default=str(JOBS_DIR))
-    sp.add_argument("--force", action="store_true", help="忽略已有结果全部重跑")
+    sp.add_argument("--force", action="store_true", help="清空该 job 已有的全部结果，从头重跑")
     sp.set_defaults(fn=cmd_run)
 
     sp = sub.add_parser("score", help="用当前任务定义重判一个已有 job（不调 LLM）")
