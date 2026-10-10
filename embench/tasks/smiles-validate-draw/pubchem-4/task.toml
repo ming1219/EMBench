@@ -1,0 +1,31 @@
+schema_version = "1.0"
+
+[task]
+id = "smiles-validate-draw/pubchem-4"
+family = "smiles-validate-draw"
+description = "SMILES 校验后绘图：PubChem_4"
+difficulty = "easy"
+tags = ["pubchem"]
+legacy = { exp = "Exp2_smiles_validate", key = "PubChem_4" }
+
+[agent]
+timeout_sec = 180
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "validateSmiles", args = { smiles = "CC1=CC2=C(C=C1)N=C(C=C2C(=O)O)C3=CC(=C(C(=C3)OC)OC)OC" } }, { tool = "drawMolecule", args = { smiles = "CC1=CC2=C(C=C1)N=C(C=C2C(=O)O)C3=CC(=C(C(=C3)OC)OC)OC" } }]
+description = "先 validateSmiles 再 drawMolecule，SMILES canonical 一致；width/height 不比"
+
+[[verifier.checks]]
+id = "validate_output"
+type = "tool_result_values"
+tool = "validateSmiles"
+expected = { valid = true, formula = "C20H19NO5" }
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 2
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

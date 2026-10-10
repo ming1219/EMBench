@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/2-4-propoxyphenyl-ethanimidamide-hydroch",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "2-(4-propoxyphenyl)ethanimidamide;hydrochloride"
+      },
+      "result": "{\"smiles\": \"CCCOC1=CC=C(C=C1)CC(=N)N.Cl\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "2-(4-propoxyphenyl)ethanimidamide;hydrochloride 的 SMILES 为 CCCOC1=CC=C(C=C1)CC(=N)N.Cl",
+  "error": null,
+  "metrics": {}
+}

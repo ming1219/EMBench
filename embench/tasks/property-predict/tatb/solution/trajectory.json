@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "task_id": "property-predict/tatb",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C6H6N6O6\", \"num_atoms\": 18, \"num_bonds\": 18}"
+    },
+    {
+      "tool": "batchPredictProperties",
+      "args": {
+        "smiles_list": [
+          "Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]"
+        ],
+        "properties": [
+          "DetoD",
+          "Td"
+        ]
+      },
+      "result": "[{\"smiles\": \"Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]\", \"DetoD\": 7885.193064730219, \"Td\": 341.7277691003734}]"
+    }
+  ],
+  "final_answer": "预测结果：DetoD=7885.193064730219，Td=341.7277691003734",
+  "error": null,
+  "metrics": {}
+}

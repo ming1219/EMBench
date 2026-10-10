@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-validate-draw/tnt",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C7H5N3O6\", \"num_atoms\": 16, \"num_bonds\": 16}"
+    },
+    {
+      "tool": "drawMolecule",
+      "args": {
+        "smiles": "Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]"
+      },
+      "result": "{\"smiles\": \"Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]\", \"message\": \"图片已保存到本地，前端会自动读取渲染。\", \"width\": 400, \"height\": 400}"
+    }
+  ],
+  "final_answer": "SMILES 有效（C7H5N3O6），结构图已绘制。",
+  "error": null,
+  "metrics": {}
+}

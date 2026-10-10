@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "task_id": "property-predict/pubchem-5",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C18H18N2O5\", \"num_atoms\": 25, \"num_bonds\": 26}"
+    },
+    {
+      "tool": "batchPredictProperties",
+      "args": {
+        "smiles_list": [
+          "COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]"
+        ],
+        "properties": [
+          "Td"
+        ]
+      },
+      "result": "[{\"smiles\": \"COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]\", \"Td\": 225.55489768425247}]"
+    }
+  ],
+  "final_answer": "预测结果：Td=225.55489768425247",
+  "error": null,
+  "metrics": {}
+}

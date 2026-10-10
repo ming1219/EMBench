@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/3-1-2-4-methylphenoxy-ethyl-benzimidazol",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "3-[1-[2-(4-methylphenoxy)ethyl]benzimidazol-2-yl]propan-1-ol"
+      },
+      "result": "{\"smiles\": \"CC1=CC=C(C=C1)OCCN2C3=CC=CC=C3N=C2CCCO\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "3-[1-[2-(4-methylphenoxy)ethyl]benzimidazol-2-yl]propan-1-ol 的 SMILES 为 CC1=CC=C(C=C1)OCCN2C3=CC=CC=C3N=C2CCCO",
+  "error": null,
+  "metrics": {}
+}

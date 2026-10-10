@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/6-methyl-2-3-4-5-trimethoxyphenyl-quinol",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "6-methyl-2-(3,4,5-trimethoxyphenyl)quinoline-4-carboxylic acid"
+      },
+      "result": "{\"smiles\": \"CC1=CC2=C(C=C1)N=C(C=C2C(=O)O)C3=CC(=C(C(=C3)OC)OC)OC\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "6-methyl-2-(3,4,5-trimethoxyphenyl)quinoline-4-carboxylic acid 的 SMILES 为 CC1=CC2=C(C=C1)N=C(C=C2C(=O)O)C3=CC(=C(C(=C3)OC)OC)OC",
+  "error": null,
+  "metrics": {}
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/bis-2-hydroxyphenyl-phosphinic-acid",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "bis(2-hydroxyphenyl)phosphinic acid"
+      },
+      "result": "{\"smiles\": \"C1=CC=C(C(=C1)O)P(=O)(C2=CC=CC=C2O)O\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "bis(2-hydroxyphenyl)phosphinic acid 的 SMILES 为 C1=CC=C(C(=C1)O)P(=O)(C2=CC=CC=C2O)O",
+  "error": null,
+  "metrics": {}
+}

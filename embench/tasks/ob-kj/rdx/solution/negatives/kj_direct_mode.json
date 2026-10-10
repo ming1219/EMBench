@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ob-kj/rdx",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "calculateOxygenBalance",
+      "args": {
+        "smiles_list": [
+          "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+        ]
+      }
+    },
+    {
+      "tool": "calculateKJ",
+      "args": {
+        "density": 1.8,
+        "hof_s": 50,
+        "formula": "C7H5N3O6"
+      }
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

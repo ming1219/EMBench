@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "task_id": "property-predict/tnt",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C7H5N3O6\", \"num_atoms\": 16, \"num_bonds\": 16}"
+    },
+    {
+      "tool": "batchPredictProperties",
+      "args": {
+        "smiles_list": [
+          "Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]"
+        ],
+        "properties": [
+          "Density",
+          "DetoD"
+        ]
+      },
+      "result": "[{\"smiles\": \"Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]\", \"Density\": 1.6552738773541829, \"DetoD\": 6983.439381491358}]"
+    }
+  ],
+  "final_answer": "预测结果：Density=1.6552738773541829，DetoD=6983.439381491358",
+  "error": null,
+  "metrics": {}
+}

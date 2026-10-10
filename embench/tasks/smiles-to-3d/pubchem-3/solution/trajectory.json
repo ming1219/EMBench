@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-to-3d/pubchem-3",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "smilesTo3D",
+      "args": {
+        "smiles": "CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3"
+      },
+      "result": "{\"formula\": \"C18H21N3O4S2\", \"num_atoms\": 48, \"bond_count\": 50}"
+    }
+  ],
+  "final_answer": "已生成 3D 结构：C18H21N3O4S2，共 48 个原子。",
+  "error": null,
+  "metrics": {}
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "task_id": "generate-predict/q8-num8-detod-only",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "generateAndPredict",
+      "args": {
+        "num": 8,
+        "use_em": true,
+        "skip_prediction": false,
+        "properties": [
+          "DetoD"
+        ]
+      },
+      "result": "{\"generated_molecules\": [\"Cc1c([N+](=O)[O-])cc([N+](=O)[O-])cc1[N+](=O)[O-]\", \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]\", \"O=[N+]([O-])OCC(CO[N+](=O)[O-])(CO[N+](=O)[O-])CO[N+](=O)[O-]\", \"O=C1NN=C([N+](=O)[O-])N1\", \"NC(N)=C([N+](=O)[O-])[N+](=O)[O-]\", \"O=[N+]([O-])N1CC([N+](=O)[O-])([N+](=O)[O-])C1\"], \"generated_count\": 8, \"results\": [{\"smiles\": \"Cc1c([N+](=O)[O-])cc([N+](=O)[O-])cc1[N+](=O)[O-]\", \"DetoD\": 8500.0}, {\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"DetoD\": 8500.0}, {\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"DetoD\": 8500.0}, {\"smiles\": \"Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]\", \"DetoD\": 8500.0}, {\"smiles\": \"O=[N+]([O-])OCC(CO[N+](=O)[O-])(CO[N+](=O)[O-])CO[N+](=O)[O-]\", \"DetoD\": 8500.0}, {\"smiles\": \"O=C1NN=C([N+](=O)[O-])N1\", \"DetoD\": 8500.0}, {\"smiles\": \"NC(N)=C([N+](=O)[O-])[N+](=O)[O-]\", \"DetoD\": 8500.0}, {\"smiles\": \"O=[N+]([O-])N1CC([N+](=O)[O-])([N+](=O)[O-])C1\", \"DetoD\": 8500.0}]}"
+    }
+  ],
+  "final_answer": "已生成 8 个候选分子。",
+  "error": null,
+  "metrics": {}
+}

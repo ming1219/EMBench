@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-validate-draw/hmx",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C4H8N8O8\", \"num_atoms\": 20, \"num_bonds\": 20}"
+    },
+    {
+      "tool": "drawMolecule",
+      "args": {
+        "smiles": "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+      },
+      "result": "{\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"message\": \"图片已保存到本地，前端会自动读取渲染。\", \"width\": 400, \"height\": 400}"
+    }
+  ],
+  "final_answer": "SMILES 有效（C4H8N8O8），结构图已绘制。",
+  "error": null,
+  "metrics": {}
+}

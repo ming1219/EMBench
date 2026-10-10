@@ -1,0 +1,536 @@
+{
+  "name": "embench",
+  "version": "0.1.0",
+  "n_tasks": 74,
+  "families": [
+    "design-multi",
+    "design-pipeline",
+    "generate-predict",
+    "magus-generate",
+    "name2smiles",
+    "ob-kj",
+    "property-predict",
+    "smiles-to-3d",
+    "smiles-validate-draw"
+  ],
+  "tasks": [
+    {
+      "id": "design-multi/q1-highenergy-lowfilter",
+      "family": "design-multi",
+      "difficulty": "hard",
+      "description": "高能低感:5候选,预测Density/DetoD/DetoP/Td+KJ+retro,在Td>200中选爆速最高(点名代号,N=5)",
+      "hash": "f795f2c8157a"
+    },
+    {
+      "id": "design-multi/q2-energy-vs-synthesis",
+      "family": "design-multi",
+      "difficulty": "hard",
+      "description": "能量-合成双目标:5候选,预测Density/DetoQ/HOF_S/DetoD+KJ+retro,推荐爆热最高且合成步数最少(点名代号,N=5)",
+      "hash": "b8ad03b53e3e"
+    },
+    {
+      "id": "design-multi/q3-two-category-compare",
+      "family": "design-multi",
+      "difficulty": "hard",
+      "description": "分类fan-out+跨类聚合:硝胺/硝基芳烃各2候选,预测Density/DetoD/Td+KJ+retro,每类推荐1个最优(点名代号,分类)",
+      "hash": "d98171173a62"
+    },
+    {
+      "id": "design-pipeline/q1-density-hof",
+      "family": "design-pipeline",
+      "difficulty": "hard",
+      "description": "含能分子设计流水线：3 候选 × (KJ + 逆合成) + 推荐",
+      "hash": "1f9701a3db14"
+    },
+    {
+      "id": "design-pipeline/q2-density-detod",
+      "family": "design-pipeline",
+      "difficulty": "hard",
+      "description": "含能分子设计流水线：3 候选 × (KJ + 逆合成) + 推荐",
+      "hash": "777754707d0b"
+    },
+    {
+      "id": "design-pipeline/q3-hof-td",
+      "family": "design-pipeline",
+      "difficulty": "hard",
+      "description": "含能分子设计流水线：3 候选 × (KJ + 逆合成) + 推荐",
+      "hash": "189804eaf649"
+    },
+    {
+      "id": "generate-predict/q1-num5-density-detod",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成+预测：num=5 use_em=True props=['Density', 'DetoD']",
+      "hash": "3437c12ca9ac"
+    },
+    {
+      "id": "generate-predict/q10-num3-smiles-only",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成：num=3 use_em=True props=无",
+      "hash": "77b038182007"
+    },
+    {
+      "id": "generate-predict/q2-num3-density-hof",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成+预测：num=3 use_em=True props=['Density', 'HOF_S']",
+      "hash": "944837322eec"
+    },
+    {
+      "id": "generate-predict/q3-num8-detod-detop-detoq",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成+预测：num=8 use_em=True props=['DetoD', 'DetoP', 'DetoQ']",
+      "hash": "d3a06f2efbe0"
+    },
+    {
+      "id": "generate-predict/q4-num5-smiles-only",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成：num=5 use_em=True props=无",
+      "hash": "4e8d5a249441"
+    },
+    {
+      "id": "generate-predict/q5-num10-density-hof-td",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成+预测：num=10 use_em=True props=['Density', 'HOF_S', 'Td']",
+      "hash": "28cd77db4d3e"
+    },
+    {
+      "id": "generate-predict/q6-num3-general-density",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成+预测：num=3 use_em=False props=['Density']",
+      "hash": "7fc776515f1f"
+    },
+    {
+      "id": "generate-predict/q7-num5-bde-td",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成+预测：num=5 use_em=True props=['BDE', 'Td']",
+      "hash": "21a2029cda6d"
+    },
+    {
+      "id": "generate-predict/q8-num8-detod-only",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成+预测：num=8 use_em=True props=['DetoD']",
+      "hash": "de42e3777d19"
+    },
+    {
+      "id": "generate-predict/q9-num5-hof-detov",
+      "family": "generate-predict",
+      "difficulty": "medium",
+      "description": "分子生成+预测：num=5 use_em=True props=['HOF_S', 'DetoV']",
+      "hash": "9ee9cf083d41"
+    },
+    {
+      "id": "magus-generate/mgo",
+      "family": "magus-generate",
+      "difficulty": "medium",
+      "description": "MAGUS 晶体结构生成：1 个 MgO",
+      "hash": "a3b90f8fd30c"
+    },
+    {
+      "id": "magus-generate/zno",
+      "family": "magus-generate",
+      "difficulty": "medium",
+      "description": "MAGUS 晶体结构生成：1 个 ZnO",
+      "hash": "a8d19cc3458e"
+    },
+    {
+      "id": "name2smiles/1-2-methylphenyl-3-3-methylpyridin-2-yl",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：1-(2-methylphenyl)-3-(3-methylpyridin-2-yl)urea",
+      "hash": "5c2bc3493342"
+    },
+    {
+      "id": "name2smiles/1-butyl-2-chloromethyl-pyrrolidine",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：1-butyl-2-(chloromethyl)pyrrolidine",
+      "hash": "7a6aaef8e345"
+    },
+    {
+      "id": "name2smiles/2-4-propoxyphenyl-ethanimidamide-hydroch",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：2-(4-propoxyphenyl)ethanimidamide;hydrochloride",
+      "hash": "95d9e5b39ab4"
+    },
+    {
+      "id": "name2smiles/3-1-2-4-methylphenoxy-ethyl-benzimidazol",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：3-[1-[2-(4-methylphenoxy)ethyl]benzimidazol-2-yl]propan-1-ol",
+      "hash": "79cabf53fc5a"
+    },
+    {
+      "id": "name2smiles/4-bromo-n-6-methoxy-1-3-benzothiazol-2-y",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：4-bromo-N-(6-methoxy-1,3-benzothiazol-2-yl)benzenesulfonamide",
+      "hash": "fee10c4d9e5c"
+    },
+    {
+      "id": "name2smiles/6-methyl-2-3-4-5-trimethoxyphenyl-quinol",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：6-methyl-2-(3,4,5-trimethoxyphenyl)quinoline-4-carboxylic acid",
+      "hash": "8f081d3e2300"
+    },
+    {
+      "id": "name2smiles/9-2-6-dichlorophenyl-methyl-n-furan-2-yl",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：9-[(2,6-dichlorophenyl)methyl]-N-(furan-2-ylmethyl)purin-6-amine",
+      "hash": "b72f7c09bf61"
+    },
+    {
+      "id": "name2smiles/bis-2-hydroxyphenyl-phosphinic-acid",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：bis(2-hydroxyphenyl)phosphinic acid",
+      "hash": "2ab88f0667d6"
+    },
+    {
+      "id": "name2smiles/cl-20",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：CL-20",
+      "hash": "5ddddac2548d"
+    },
+    {
+      "id": "name2smiles/cl20",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：CL20",
+      "hash": "836d963b2070"
+    },
+    {
+      "id": "name2smiles/hmx",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：HMX",
+      "hash": "31f18803c0a5"
+    },
+    {
+      "id": "name2smiles/methyl-4-4-benzoyl-2-nitroanilino-butano",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：methyl 4-(4-benzoyl-2-nitroanilino)butanoate",
+      "hash": "e1c26505ab87"
+    },
+    {
+      "id": "name2smiles/n-3-2-ethylsulfonyl-3-phenyl-3-4-dihydro",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：N-[3-(2-ethylsulfonyl-3-phenyl-3,4-dihydropyrazol-5-yl)phenyl]methanesulfonamide",
+      "hash": "5ca5dacaefe6"
+    },
+    {
+      "id": "name2smiles/ng",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：NG",
+      "hash": "6fd4fdfc200d"
+    },
+    {
+      "id": "name2smiles/nitroglycerin",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：nitroglycerin",
+      "hash": "6467286e4914"
+    },
+    {
+      "id": "name2smiles/petn",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：PETN",
+      "hash": "c03a79aa6661"
+    },
+    {
+      "id": "name2smiles/rdx",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：RDX",
+      "hash": "867793d49756"
+    },
+    {
+      "id": "name2smiles/tatb",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：TATB",
+      "hash": "c50f7ca7f101"
+    },
+    {
+      "id": "name2smiles/tnt",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：TNT",
+      "hash": "d8b1c8756109"
+    },
+    {
+      "id": "name2smiles/trinitrotoluene",
+      "family": "name2smiles",
+      "difficulty": "easy",
+      "description": "名称→SMILES：trinitrotoluene",
+      "hash": "61626b618de6"
+    },
+    {
+      "id": "ob-kj/hmx",
+      "family": "ob-kj",
+      "difficulty": "medium",
+      "description": "氧平衡 + KJ 爆轰参数：HMX",
+      "hash": "217132ca3f4d"
+    },
+    {
+      "id": "ob-kj/pubchem-1",
+      "family": "ob-kj",
+      "difficulty": "medium",
+      "description": "氧平衡 + KJ 爆轰参数：PubChem_1",
+      "hash": "1baeb0cfd1a7"
+    },
+    {
+      "id": "ob-kj/pubchem-2",
+      "family": "ob-kj",
+      "difficulty": "medium",
+      "description": "氧平衡 + KJ 爆轰参数：PubChem_2",
+      "hash": "6fc7ec7a5a7f"
+    },
+    {
+      "id": "ob-kj/pubchem-3",
+      "family": "ob-kj",
+      "difficulty": "medium",
+      "description": "氧平衡 + KJ 爆轰参数：PubChem_3",
+      "hash": "dd7cad035c03"
+    },
+    {
+      "id": "ob-kj/rdx",
+      "family": "ob-kj",
+      "difficulty": "medium",
+      "description": "氧平衡 + KJ 爆轰参数：RDX",
+      "hash": "e9cc04d4b1eb"
+    },
+    {
+      "id": "ob-kj/tnt",
+      "family": "ob-kj",
+      "difficulty": "medium",
+      "description": "氧平衡 + KJ 爆轰参数：TNT",
+      "hash": "624692f0fd8c"
+    },
+    {
+      "id": "property-predict/cl-20",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（Density,DetoQ）：CL-20",
+      "hash": "b9231d3ad9ed"
+    },
+    {
+      "id": "property-predict/hmx",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（Density,DetoD,HOF_S）：HMX",
+      "hash": "6206c28b7d2e"
+    },
+    {
+      "id": "property-predict/pubchem-1",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（Density,Td）：PubChem_1",
+      "hash": "d1a7a1804631"
+    },
+    {
+      "id": "property-predict/pubchem-2",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（Density）：PubChem_2",
+      "hash": "6e6eae3147ab"
+    },
+    {
+      "id": "property-predict/pubchem-3",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（HOF_S）：PubChem_3",
+      "hash": "a40e27f7dd57"
+    },
+    {
+      "id": "property-predict/pubchem-4",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（Density,DetoD）：PubChem_4",
+      "hash": "5eb6032d099d"
+    },
+    {
+      "id": "property-predict/pubchem-5",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（Td）：PubChem_5",
+      "hash": "4d3407d61fc6"
+    },
+    {
+      "id": "property-predict/rdx",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（Density,DetoP）：RDX",
+      "hash": "7dfc83a1005a"
+    },
+    {
+      "id": "property-predict/tatb",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（DetoD,Td）：TATB",
+      "hash": "c1a792ce3ef2"
+    },
+    {
+      "id": "property-predict/tnt",
+      "family": "property-predict",
+      "difficulty": "medium",
+      "description": "校验+性质预测（Density,DetoD）：TNT",
+      "hash": "d2b9d830cc0a"
+    },
+    {
+      "id": "smiles-to-3d/cl-20",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：CL-20",
+      "hash": "07eb5ada7adc"
+    },
+    {
+      "id": "smiles-to-3d/hmx",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：HMX",
+      "hash": "b60e3de84a98"
+    },
+    {
+      "id": "smiles-to-3d/pubchem-1",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：PubChem_1",
+      "hash": "19256bd82ca8"
+    },
+    {
+      "id": "smiles-to-3d/pubchem-2",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：PubChem_2",
+      "hash": "dd090b92f23a"
+    },
+    {
+      "id": "smiles-to-3d/pubchem-3",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：PubChem_3",
+      "hash": "dd4774cf0217"
+    },
+    {
+      "id": "smiles-to-3d/pubchem-4",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：PubChem_4",
+      "hash": "a9328def2c59"
+    },
+    {
+      "id": "smiles-to-3d/pubchem-5",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：PubChem_5",
+      "hash": "7566ebaf847c"
+    },
+    {
+      "id": "smiles-to-3d/rdx",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：RDX",
+      "hash": "8baf0e68ff2e"
+    },
+    {
+      "id": "smiles-to-3d/tatb",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：TATB",
+      "hash": "de5ff9aa6bec"
+    },
+    {
+      "id": "smiles-to-3d/tnt",
+      "family": "smiles-to-3d",
+      "difficulty": "easy",
+      "description": "SMILES→3D 结构：TNT",
+      "hash": "7ef28741b241"
+    },
+    {
+      "id": "smiles-validate-draw/cl-20",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：CL-20",
+      "hash": "2e334519efa9"
+    },
+    {
+      "id": "smiles-validate-draw/hmx",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：HMX",
+      "hash": "6392cab489ed"
+    },
+    {
+      "id": "smiles-validate-draw/pubchem-1",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：PubChem_1",
+      "hash": "2ec68ac1fb31"
+    },
+    {
+      "id": "smiles-validate-draw/pubchem-2",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：PubChem_2",
+      "hash": "7a061af3ba2a"
+    },
+    {
+      "id": "smiles-validate-draw/pubchem-3",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：PubChem_3",
+      "hash": "d16725fe5726"
+    },
+    {
+      "id": "smiles-validate-draw/pubchem-4",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：PubChem_4",
+      "hash": "ceaf3de52dff"
+    },
+    {
+      "id": "smiles-validate-draw/pubchem-5",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：PubChem_5",
+      "hash": "fa48326a2d78"
+    },
+    {
+      "id": "smiles-validate-draw/rdx",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：RDX",
+      "hash": "057512861531"
+    },
+    {
+      "id": "smiles-validate-draw/tatb",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：TATB",
+      "hash": "b4a6ed149545"
+    },
+    {
+      "id": "smiles-validate-draw/tnt",
+      "family": "smiles-validate-draw",
+      "difficulty": "easy",
+      "description": "SMILES 校验后绘图：TNT",
+      "hash": "39a900f145da"
+    }
+  ]
+}

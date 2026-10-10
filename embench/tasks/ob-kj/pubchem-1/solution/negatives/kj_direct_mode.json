@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ob-kj/pubchem-1",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "calculateOxygenBalance",
+      "args": {
+        "smiles_list": [
+          "C1=CC(=C(C(=C1)Cl)CN2C=NC3=C(N=CN=C32)NCC4=CC=CO4)Cl"
+        ]
+      }
+    },
+    {
+      "tool": "calculateKJ",
+      "args": {
+        "density": 1.8,
+        "hof_s": 50,
+        "formula": "C7H5N3O6"
+      }
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

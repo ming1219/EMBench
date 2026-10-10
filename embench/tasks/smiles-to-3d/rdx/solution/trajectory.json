@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-to-3d/rdx",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "smilesTo3D",
+      "args": {
+        "smiles": "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+      },
+      "result": "{\"formula\": \"C3H6N6O6\", \"num_atoms\": 21, \"bond_count\": 21}"
+    }
+  ],
+  "final_answer": "已生成 3D 结构：C3H6N6O6，共 21 个原子。",
+  "error": null,
+  "metrics": {}
+}

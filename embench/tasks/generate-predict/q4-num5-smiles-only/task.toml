@@ -1,0 +1,32 @@
+schema_version = "1.0"
+
+[task]
+id = "generate-predict/q4-num5-smiles-only"
+family = "generate-predict"
+description = "分子生成：num=5 use_em=True props=无"
+difficulty = "medium"
+tags = ["chemprop", "generation"]
+legacy = { exp = "Exp8_generate_predict", key = "Q4_num5_smiles_only" }
+
+[agent]
+timeout_sec = 600
+
+[[verifier.checks]]
+id = "gen_args"
+type = "arg_constraints"
+tool = "generateAndPredict"
+constraints = { num = { eq = 5 }, use_em = { eq = true, default = true }, skip_prediction = { eq = true, default = false } }
+description = "num/use_em/skip_prediction/properties 与指令一致（生成输出随机，只判参数合规）"
+
+[[verifier.checks]]
+id = "gen_output"
+type = "generation_output"
+min_count = 2
+required_properties = []
+description = "生成数 ≥ num/2（use_em 时 OB 过滤可能减少），且结果含全部所需性质"
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 1
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

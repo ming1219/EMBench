@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-validate-draw/pubchem-5",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C18H18N2O5\", \"num_atoms\": 25, \"num_bonds\": 26}"
+    },
+    {
+      "tool": "drawMolecule",
+      "args": {
+        "smiles": "COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]"
+      },
+      "result": "{\"smiles\": \"COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]\", \"message\": \"图片已保存到本地，前端会自动读取渲染。\", \"width\": 400, \"height\": 400}"
+    }
+  ],
+  "final_answer": "SMILES 有效（C18H18N2O5），结构图已绘制。",
+  "error": null,
+  "metrics": {}
+}

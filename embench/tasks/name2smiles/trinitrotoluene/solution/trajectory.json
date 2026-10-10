@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/trinitrotoluene",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "trinitrotoluene"
+      },
+      "result": "{\"smiles\": \"Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]\", \"source\": \"builtin\"}"
+    }
+  ],
+  "final_answer": "trinitrotoluene 的 SMILES 为 Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]",
+  "error": null,
+  "metrics": {}
+}

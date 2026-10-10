@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "task_id": "property-predict/cl-20",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "O=[N+]([O-])N1C2C3N([N+](=O)[O-])C1C1N([N+](=O)[O-])C(C(N1[N+](=O)[O-])N3[N+](=O)[O-])N2[N+](=O)[O-]"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C6H6N12O12\", \"num_atoms\": 30, \"num_bonds\": 33}"
+    },
+    {
+      "tool": "batchPredictProperties",
+      "args": {
+        "smiles_list": [
+          "O=[N+]([O-])N1C2C3N([N+](=O)[O-])C1C1N([N+](=O)[O-])C(C(N1[N+](=O)[O-])N3[N+](=O)[O-])N2[N+](=O)[O-]"
+        ],
+        "properties": [
+          "Density",
+          "DetoQ"
+        ]
+      },
+      "result": "[{\"smiles\": \"O=[N+]([O-])N1C2C3N([N+](=O)[O-])C1C1N([N+](=O)[O-])C(C(N1[N+](=O)[O-])N3[N+](=O)[O-])N2[N+](=O)[O-]\", \"Density\": 2.0011393997003677, \"DetoQ\": 6322.208985065854}]"
+    }
+  ],
+  "final_answer": "预测结果：Density=2.0011393997003677，DetoQ=6322.208985065854",
+  "error": null,
+  "metrics": {}
+}

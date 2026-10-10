@@ -1,0 +1,34 @@
+schema_version = "1.0"
+
+[task]
+id = "property-predict/rdx"
+family = "property-predict"
+description = "校验+性质预测（Density,DetoP）：RDX"
+difficulty = "medium"
+tags = ["chemprop", "builtin"]
+legacy = { exp = "Exp4_property_predict", key = "RDX" }
+
+[agent]
+timeout_sec = 300
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "validateSmiles", args = { smiles = "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1" } }, { tool = "batchPredictProperties", args = { smiles_list = ["O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1"], properties = ["Density", "DetoP"] } }]
+description = "先校验再预测；properties 集合比较，兼容 JSON 字符串形式"
+
+[[verifier.checks]]
+id = "predict_values"
+type = "tool_result_values"
+tool = "batchPredictProperties"
+expected = { Density = 1.8441985656096427, DetoP = 36.446086903199046 }
+match_smiles = "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+rel_tol = 0.01
+description = "chemprop 同机确定性预测，相对误差 < 1%"
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 2
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

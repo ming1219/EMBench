@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ob-kj/rdx",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "calculateOxygenBalance",
+      "args": {
+        "smiles_list": [
+          "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+        ]
+      },
+      "result": "[{\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"formula\": \"C3H6N6O6\", \"OB_CO\": 0.0, \"OB_CO2\": -21.6102}]"
+    },
+    {
+      "tool": "calculateKJ",
+      "args": {
+        "smiles": "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+      },
+      "result": "{\"success\": true, \"formula\": \"C3H6N6O6\", \"density\": 1.8441985656096427, \"hof_s\": 79.13507358300629, \"DetoV\": 756, \"DetoT\": 4757, \"DetoD\": 8965, \"DetoP\": 36.9, \"DetoQ\": 6289, \"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"predicted_density\": 1.8441985656096427, \"predicted_hof_s\": 79.13507358300629}"
+    }
+  ],
+  "final_answer": "OB_CO2=-21.6102，DetoD=8965，DetoP=36.9，DetoT=4757，DetoV=756，DetoQ=6289",
+  "error": null,
+  "metrics": {}
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/methyl-4-4-benzoyl-2-nitroanilino-butano",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "methyl 4-(4-benzoyl-2-nitroanilino)butanoate"
+      },
+      "result": "{\"smiles\": \"COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "methyl 4-(4-benzoyl-2-nitroanilino)butanoate 的 SMILES 为 COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]",
+  "error": null,
+  "metrics": {}
+}

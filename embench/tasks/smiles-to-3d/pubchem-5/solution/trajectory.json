@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-to-3d/pubchem-5",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "smilesTo3D",
+      "args": {
+        "smiles": "COC(=O)CCCNC1=C(C=C(C=C1)C(=O)C2=CC=CC=C2)[N+](=O)[O-]"
+      },
+      "result": "{\"formula\": \"C18H18N2O5\", \"num_atoms\": 43, \"bond_count\": 44}"
+    }
+  ],
+  "final_answer": "已生成 3D 结构：C18H18N2O5，共 43 个原子。",
+  "error": null,
+  "metrics": {}
+}

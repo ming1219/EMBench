@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "task_id": "property-predict/pubchem-3",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C18H21N3O4S2\", \"num_atoms\": 27, \"num_bonds\": 29}"
+    },
+    {
+      "tool": "batchPredictProperties",
+      "args": {
+        "smiles_list": [
+          "CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3"
+        ],
+        "properties": [
+          "HOF_S"
+        ]
+      },
+      "result": "[{\"smiles\": \"CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3\", \"HOF_S\": -523.6127604647908}]"
+    }
+  ],
+  "final_answer": "预测结果：HOF_S=-523.6127604647908",
+  "error": null,
+  "metrics": {}
+}

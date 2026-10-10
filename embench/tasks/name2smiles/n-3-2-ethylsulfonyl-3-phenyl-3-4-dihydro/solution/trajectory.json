@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/n-3-2-ethylsulfonyl-3-phenyl-3-4-dihydro",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "N-[3-(2-ethylsulfonyl-3-phenyl-3,4-dihydropyrazol-5-yl)phenyl]methanesulfonamide"
+      },
+      "result": "{\"smiles\": \"CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "N-[3-(2-ethylsulfonyl-3-phenyl-3,4-dihydropyrazol-5-yl)phenyl]methanesulfonamide 的 SMILES 为 CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3",
+  "error": null,
+  "metrics": {}
+}

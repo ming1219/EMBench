@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-validate-draw/pubchem-2",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "C1=CC=C(C(=C1)O)P(=O)(C2=CC=CC=C2O)O"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C12H11O4P\", \"num_atoms\": 17, \"num_bonds\": 18}"
+    },
+    {
+      "tool": "drawMolecule",
+      "args": {
+        "smiles": "C1=CC=C(C(=C1)O)P(=O)(C2=CC=CC=C2O)O"
+      },
+      "result": "{\"smiles\": \"C1=CC=C(C(=C1)O)P(=O)(C2=CC=CC=C2O)O\", \"message\": \"图片已保存到本地，前端会自动读取渲染。\", \"width\": 400, \"height\": 400}"
+    }
+  ],
+  "final_answer": "SMILES 有效（C12H11O4P），结构图已绘制。",
+  "error": null,
+  "metrics": {}
+}

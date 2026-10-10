@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-to-3d/tatb",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "smilesTo3D",
+      "args": {
+        "smiles": "Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]"
+      },
+      "result": "{\"formula\": \"C6H6N6O6\", \"num_atoms\": 24, \"bond_count\": 24}"
+    }
+  ],
+  "final_answer": "已生成 3D 结构：C6H6N6O6，共 24 个原子。",
+  "error": null,
+  "metrics": {}
+}

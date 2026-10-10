@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "task_id": "property-predict/tatb",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]"
+      }
+    },
+    {
+      "tool": "batchPredictProperties",
+      "args": {
+        "smiles_list": [
+          "Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]"
+        ],
+        "properties": [
+          "BDE"
+        ]
+      }
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

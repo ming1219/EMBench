@@ -1,0 +1,41 @@
+schema_version = "1.0"
+
+[task]
+id = "ob-kj/tnt"
+family = "ob-kj"
+description = "氧平衡 + KJ 爆轰参数：TNT"
+difficulty = "medium"
+tags = ["chemprop", "builtin"]
+legacy = { exp = "Exp6_ob_kj", key = "TNT" }
+
+[agent]
+timeout_sec = 300
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "calculateOxygenBalance", args = { smiles_list = ["Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]"] } }, { tool = "calculateKJ", args = { smiles = "Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]" } }]
+description = "先氧平衡再 KJ；calculateKJ 必须走 smiles= 自动预测模式"
+
+[[verifier.checks]]
+id = "ob_values"
+type = "tool_result_values"
+tool = "calculateOxygenBalance"
+expected = { OB_CO = -24.6553, OB_CO2 = -73.9658 }
+match_smiles = "Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]"
+rel_tol = 0.01
+abs_tol = 0.01
+
+[[verifier.checks]]
+id = "kj_values"
+type = "tool_result_values"
+tool = "calculateKJ"
+expected = { DetoD = 6995, DetoP = 21.0, DetoT = 3028, DetoV = 567, DetoQ = 5340 }
+rel_tol = 0.01
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 2
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

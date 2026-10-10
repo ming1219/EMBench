@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-validate-draw/pubchem-3",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C18H21N3O4S2\", \"num_atoms\": 27, \"num_bonds\": 29}"
+    },
+    {
+      "tool": "drawMolecule",
+      "args": {
+        "smiles": "CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3"
+      },
+      "result": "{\"smiles\": \"CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3\", \"message\": \"图片已保存到本地，前端会自动读取渲染。\", \"width\": 400, \"height\": 400}"
+    }
+  ],
+  "final_answer": "SMILES 有效（C18H21N3O4S2），结构图已绘制。",
+  "error": null,
+  "metrics": {}
+}

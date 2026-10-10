@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/ng",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "NG"
+      },
+      "result": "{\"smiles\": \"O=[N+]([O-])OCC(O[N+](=O)[O-])CO[N+](=O)[O-]\", \"source\": \"builtin\"}"
+    }
+  ],
+  "final_answer": "NG 的 SMILES 为 O=[N+]([O-])OCC(O[N+](=O)[O-])CO[N+](=O)[O-]",
+  "error": null,
+  "metrics": {}
+}

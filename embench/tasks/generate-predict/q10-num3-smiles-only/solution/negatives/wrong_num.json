@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "task_id": "generate-predict/q10-num3-smiles-only",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "generateAndPredict",
+      "args": {
+        "num": 4,
+        "use_em": true,
+        "skip_prediction": true
+      },
+      "result": "{\"generated_molecules\": [\"Cc1c([N+](=O)[O-])cc([N+](=O)[O-])cc1[N+](=O)[O-]\", \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\"], \"generated_count\": 3, \"results\": []}"
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

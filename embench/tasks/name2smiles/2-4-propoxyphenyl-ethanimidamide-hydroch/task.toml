@@ -1,0 +1,31 @@
+schema_version = "1.0"
+
+[task]
+id = "name2smiles/2-4-propoxyphenyl-ethanimidamide-hydroch"
+family = "name2smiles"
+description = "名称→SMILES：2-(4-propoxyphenyl)ethanimidamide;hydrochloride"
+difficulty = "easy"
+tags = ["pubchem"]
+legacy = { exp = "Exp1_name_to_smiles", key = "2-(4-propoxyphenyl)ethanimidamide;hydrochloride" }
+
+[agent]
+timeout_sec = 180
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "nameToSmiles", args = { name = "2-(4-propoxyphenyl)ethanimidamide;hydrochloride" } }]
+description = "调用 nameToSmiles 且 name 正确（别名 CL20/CL-20 视为相同）"
+
+[[verifier.checks]]
+id = "answer"
+type = "answer_smiles"
+expected = ["CCCOC1=CC=C(C=C1)CC(=N)N.Cl"]
+description = "最终回答给出正确 SMILES（canonical 比较，写法不同不扣分）"
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 1
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

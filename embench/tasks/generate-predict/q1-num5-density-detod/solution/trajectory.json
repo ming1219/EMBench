@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "task_id": "generate-predict/q1-num5-density-detod",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "generateAndPredict",
+      "args": {
+        "num": 5,
+        "use_em": true,
+        "skip_prediction": false,
+        "properties": [
+          "Density",
+          "DetoD"
+        ]
+      },
+      "result": "{\"generated_molecules\": [\"Cc1c([N+](=O)[O-])cc([N+](=O)[O-])cc1[N+](=O)[O-]\", \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]\", \"O=[N+]([O-])OCC(CO[N+](=O)[O-])(CO[N+](=O)[O-])CO[N+](=O)[O-]\"], \"generated_count\": 5, \"results\": [{\"smiles\": \"Cc1c([N+](=O)[O-])cc([N+](=O)[O-])cc1[N+](=O)[O-]\", \"Density\": 1.8, \"DetoD\": 8500.0}, {\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"Density\": 1.8, \"DetoD\": 8500.0}, {\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"Density\": 1.8, \"DetoD\": 8500.0}, {\"smiles\": \"Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]\", \"Density\": 1.8, \"DetoD\": 8500.0}, {\"smiles\": \"O=[N+]([O-])OCC(CO[N+](=O)[O-])(CO[N+](=O)[O-])CO[N+](=O)[O-]\", \"Density\": 1.8, \"DetoD\": 8500.0}]}"
+    }
+  ],
+  "final_answer": "已生成 5 个候选分子。",
+  "error": null,
+  "metrics": {}
+}

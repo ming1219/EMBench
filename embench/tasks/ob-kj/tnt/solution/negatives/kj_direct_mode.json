@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ob-kj/tnt",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "calculateOxygenBalance",
+      "args": {
+        "smiles_list": [
+          "Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]"
+        ]
+      }
+    },
+    {
+      "tool": "calculateKJ",
+      "args": {
+        "density": 1.8,
+        "hof_s": 50,
+        "formula": "C7H5N3O6"
+      }
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

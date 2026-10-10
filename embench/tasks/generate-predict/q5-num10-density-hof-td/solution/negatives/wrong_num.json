@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "task_id": "generate-predict/q5-num10-density-hof-td",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "generateAndPredict",
+      "args": {
+        "num": 11,
+        "use_em": true,
+        "skip_prediction": false,
+        "properties": [
+          "Density",
+          "HOF_S",
+          "Td"
+        ]
+      },
+      "result": "{\"generated_molecules\": [\"Cc1c([N+](=O)[O-])cc([N+](=O)[O-])cc1[N+](=O)[O-]\", \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]\", \"O=[N+]([O-])OCC(CO[N+](=O)[O-])(CO[N+](=O)[O-])CO[N+](=O)[O-]\", \"O=C1NN=C([N+](=O)[O-])N1\", \"NC(N)=C([N+](=O)[O-])[N+](=O)[O-]\", \"O=[N+]([O-])N1CC([N+](=O)[O-])([N+](=O)[O-])C1\", \"O=[N+]([O-])OCC(O[N+](=O)[O-])CO[N+](=O)[O-]\", \"COc1ccc([N+](=O)[O-])cc1[N+](=O)[O-]\"], \"generated_count\": 10, \"results\": [{\"smiles\": \"Cc1c([N+](=O)[O-])cc([N+](=O)[O-])cc1[N+](=O)[O-]\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"O=[N+]([O-])OCC(CO[N+](=O)[O-])(CO[N+](=O)[O-])CO[N+](=O)[O-]\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"O=C1NN=C([N+](=O)[O-])N1\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"NC(N)=C([N+](=O)[O-])[N+](=O)[O-]\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"O=[N+]([O-])N1CC([N+](=O)[O-])([N+](=O)[O-])C1\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"O=[N+]([O-])OCC(O[N+](=O)[O-])CO[N+](=O)[O-]\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}, {\"smiles\": \"COc1ccc([N+](=O)[O-])cc1[N+](=O)[O-]\", \"Density\": 1.8, \"HOF_S\": 80.0, \"Td\": 230.0}]}"
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

@@ -1,0 +1,11 @@
+{
+  "agent": {"name": "my-agent", "model": "my-llm"},
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {"name": "RDX"},
+      "result": "{\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"source\": \"builtin\"}"
+    }
+  ],
+  "final_answer": "已经为您查询到 RDX 的结构，请问还需要做什么？"
+}

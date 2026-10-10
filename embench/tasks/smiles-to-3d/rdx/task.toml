@@ -1,0 +1,31 @@
+schema_version = "1.0"
+
+[task]
+id = "smiles-to-3d/rdx"
+family = "smiles-to-3d"
+description = "SMILES→3D 结构：RDX"
+difficulty = "easy"
+tags = ["builtin"]
+legacy = { exp = "Exp3_smiles_to_3d", key = "RDX" }
+
+[agent]
+timeout_sec = 180
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "smilesTo3D", args = { smiles = "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])C1" } }]
+
+[[verifier.checks]]
+id = "structure_output"
+type = "tool_result_values"
+tool = "smilesTo3D"
+expected = { formula = "C3H6N6O6", num_atoms = 21 }
+description = "3D 结构的分子式与原子数（含 H）正确"
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 1
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

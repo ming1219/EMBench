@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-to-3d/hmx",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "smilesTo3D",
+      "args": {
+        "smiles": "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+      },
+      "result": "{\"formula\": \"C4H8N8O8\", \"num_atoms\": 28, \"bond_count\": 28}"
+    }
+  ],
+  "final_answer": "已生成 3D 结构：C4H8N8O8，共 28 个原子。",
+  "error": null,
+  "metrics": {}
+}

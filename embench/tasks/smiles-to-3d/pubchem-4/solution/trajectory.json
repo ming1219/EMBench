@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-to-3d/pubchem-4",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "smilesTo3D",
+      "args": {
+        "smiles": "CC1=CC2=C(C=C1)N=C(C=C2C(=O)O)C3=CC(=C(C(=C3)OC)OC)OC"
+      },
+      "result": "{\"formula\": \"C20H19NO5\", \"num_atoms\": 45, \"bond_count\": 47}"
+    }
+  ],
+  "final_answer": "已生成 3D 结构：C20H19NO5，共 45 个原子。",
+  "error": null,
+  "metrics": {}
+}

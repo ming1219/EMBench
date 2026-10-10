@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/tatb",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "TATB"
+      },
+      "result": "{\"smiles\": \"Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]\", \"source\": \"builtin\"}"
+    }
+  ],
+  "final_answer": "TATB 的 SMILES 为 Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]",
+  "error": null,
+  "metrics": {}
+}

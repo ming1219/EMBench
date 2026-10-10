@@ -1,0 +1,41 @@
+schema_version = "1.0"
+
+[task]
+id = "ob-kj/pubchem-3"
+family = "ob-kj"
+description = "氧平衡 + KJ 爆轰参数：PubChem_3"
+difficulty = "medium"
+tags = ["chemprop", "pubchem"]
+legacy = { exp = "Exp6_ob_kj", key = "PubChem_3" }
+
+[agent]
+timeout_sec = 300
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "calculateOxygenBalance", args = { smiles_list = ["CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3"] } }, { tool = "calculateKJ", args = { smiles = "CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3" } }]
+description = "先氧平衡再 KJ；calculateKJ 必须走 smiles= 自动预测模式"
+
+[[verifier.checks]]
+id = "ob_values"
+type = "tool_result_values"
+tool = "calculateOxygenBalance"
+expected = { OB_CO = -96.1923, OB_CO2 = -166.8642 }
+match_smiles = "CCS(=O)(=O)N1C(CC(=N1)C2=CC(=CC=C2)NS(=O)(=O)C)C3=CC=CC=C3"
+rel_tol = 0.01
+abs_tol = 0.01
+
+[[verifier.checks]]
+id = "kj_values"
+type = "tool_result_values"
+tool = "calculateKJ"
+expected = { DetoD = 0, DetoP = 0.0, DetoT = 0, DetoV = 0, DetoQ = 0 }
+rel_tol = 0.01
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 2
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

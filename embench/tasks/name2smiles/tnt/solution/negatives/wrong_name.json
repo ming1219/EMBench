@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/tnt",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "aspirin"
+      },
+      "result": "{\"smiles\": \"CC(=O)Oc1ccccc1C(=O)O\"}"
+    }
+  ],
+  "final_answer": "CC(=O)Oc1ccccc1C(=O)O",
+  "error": null,
+  "metrics": {}
+}

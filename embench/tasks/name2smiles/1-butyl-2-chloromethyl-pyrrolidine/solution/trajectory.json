@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/1-butyl-2-chloromethyl-pyrrolidine",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "1-butyl-2-(chloromethyl)pyrrolidine"
+      },
+      "result": "{\"smiles\": \"CCCCN1CCCC1CCl\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "1-butyl-2-(chloromethyl)pyrrolidine 的 SMILES 为 CCCCN1CCCC1CCl",
+  "error": null,
+  "metrics": {}
+}

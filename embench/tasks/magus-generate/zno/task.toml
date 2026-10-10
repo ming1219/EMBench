@@ -1,0 +1,31 @@
+schema_version = "1.0"
+
+[task]
+id = "magus-generate/zno"
+family = "magus-generate"
+description = "MAGUS 晶体结构生成：1 个 ZnO"
+difficulty = "medium"
+tags = ["magus"]
+legacy = { exp = "Exp11_magus_generate", key = "ZnO" }
+
+[agent]
+timeout_sec = 900
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "magusStatus", args = {} }, { tool = "magusGenerate", args = { formula = "ZnO", number = 1 } }]
+description = "先 magusStatus 再 magusGenerate；只比 formula/number，其余可选参数不比"
+
+[[verifier.checks]]
+id = "generate_output"
+type = "tool_result_values"
+tool = "magusGenerate"
+expected = { generated_count = 1, formula = "ZnO" }
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 2
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

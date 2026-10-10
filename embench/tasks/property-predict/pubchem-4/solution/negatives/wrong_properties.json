@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "task_id": "property-predict/pubchem-4",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "CC1=CC2=C(C=C1)N=C(C=C2C(=O)O)C3=CC(=C(C(=C3)OC)OC)OC"
+      }
+    },
+    {
+      "tool": "batchPredictProperties",
+      "args": {
+        "smiles_list": [
+          "CC1=CC2=C(C=C1)N=C(C=C2C(=O)O)C3=CC(=C(C(=C3)OC)OC)OC"
+        ],
+        "properties": [
+          "BDE"
+        ]
+      }
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

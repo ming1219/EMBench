@@ -1,0 +1,31 @@
+schema_version = "1.0"
+
+[task]
+id = "smiles-validate-draw/tatb"
+family = "smiles-validate-draw"
+description = "SMILES 校验后绘图：TATB"
+difficulty = "easy"
+tags = ["builtin"]
+legacy = { exp = "Exp2_smiles_validate", key = "TATB" }
+
+[agent]
+timeout_sec = 180
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "validateSmiles", args = { smiles = "Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]" } }, { tool = "drawMolecule", args = { smiles = "Nc1c([N+](=O)[O-])c(N)c([N+](=O)[O-])c(N)c1[N+](=O)[O-]" } }]
+description = "先 validateSmiles 再 drawMolecule，SMILES canonical 一致；width/height 不比"
+
+[[verifier.checks]]
+id = "validate_output"
+type = "tool_result_values"
+tool = "validateSmiles"
+expected = { valid = true, formula = "C6H6N6O6" }
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 2
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

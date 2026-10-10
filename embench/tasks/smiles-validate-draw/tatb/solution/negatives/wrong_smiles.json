@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-validate-draw/tatb",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "CCO"
+      }
+    },
+    {
+      "tool": "drawMolecule",
+      "args": {
+        "smiles": "CCO"
+      }
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

@@ -1,0 +1,11 @@
+{
+  "agent": {"name": "my-agent", "model": "my-llm"},
+  "steps": [
+    {
+      "tool": "calculateKJ",
+      "args": {"smiles": "Cc1c(cc(cc1[N+](=O)[O-])[N+](=O)[O-])[N+](=O)[O-]"},
+      "result": "{\"success\": true, \"DetoV\": 567, \"DetoT\": 3028, \"DetoD\": 6995, \"DetoP\": 21.0, \"DetoQ\": 5340}"
+    }
+  ],
+  "final_answer": "TNT 的爆速约 6995 m/s，爆压约 21.0 GPa。"
+}

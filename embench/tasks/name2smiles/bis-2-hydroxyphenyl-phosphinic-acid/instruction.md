@@ -1,0 +1,1 @@
+请将化学物质 bis(2-hydroxyphenyl)phosphinic acid 转换为 SMILES 字符串。

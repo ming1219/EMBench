@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "task_id": "magus-generate/mgo",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "magusStatus",
+      "args": {}
+    },
+    {
+      "tool": "magusGenerate",
+      "args": {
+        "formula": "ZnO",
+        "number": 1
+      }
+    }
+  ],
+  "final_answer": "",
+  "error": null,
+  "metrics": {}
+}

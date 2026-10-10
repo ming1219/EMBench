@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/4-bromo-n-6-methoxy-1-3-benzothiazol-2-y",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "4-bromo-N-(6-methoxy-1,3-benzothiazol-2-yl)benzenesulfonamide"
+      },
+      "result": "{\"smiles\": \"COC1=CC2=C(C=C1)N=C(S2)NS(=O)(=O)C3=CC=C(C=C3)Br\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "4-bromo-N-(6-methoxy-1,3-benzothiazol-2-yl)benzenesulfonamide 的 SMILES 为 COC1=CC2=C(C=C1)N=C(S2)NS(=O)(=O)C3=CC=C(C=C3)Br",
+  "error": null,
+  "metrics": {}
+}

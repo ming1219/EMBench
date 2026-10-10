@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ob-kj/hmx",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "calculateOxygenBalance",
+      "args": {
+        "smiles_list": [
+          "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+        ]
+      },
+      "result": "[{\"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"formula\": \"C4H8N8O8\", \"OB_CO\": 0.0, \"OB_CO2\": -21.6102}]"
+    },
+    {
+      "tool": "calculateKJ",
+      "args": {
+        "smiles": "O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1"
+      },
+      "result": "{\"success\": true, \"formula\": \"C4H8N8O8\", \"density\": 1.8736364799144596, \"hof_s\": 104.84956632189815, \"DetoV\": 756, \"DetoT\": 4756, \"DetoD\": 9065, \"DetoP\": 38.1, \"DetoQ\": 6287, \"smiles\": \"O=[N+]([O-])N1CN([N+](=O)[O-])CN([N+](=O)[O-])CN([N+](=O)[O-])C1\", \"predicted_density\": 1.8736364799144596, \"predicted_hof_s\": 104.84956632189815}"
+    }
+  ],
+  "final_answer": "OB_CO2=-21.6102，DetoD=9065，DetoP=38.1，DetoT=4756，DetoV=756，DetoQ=6287",
+  "error": null,
+  "metrics": {}
+}

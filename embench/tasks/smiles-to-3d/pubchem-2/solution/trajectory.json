@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-to-3d/pubchem-2",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "smilesTo3D",
+      "args": {
+        "smiles": "C1=CC=C(C(=C1)O)P(=O)(C2=CC=CC=C2O)O"
+      },
+      "result": "{\"formula\": \"C12H11O4P\", \"num_atoms\": 28, \"bond_count\": 29}"
+    }
+  ],
+  "final_answer": "已生成 3D 结构：C12H11O4P，共 28 个原子。",
+  "error": null,
+  "metrics": {}
+}

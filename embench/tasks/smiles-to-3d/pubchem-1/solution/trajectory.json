@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "smiles-to-3d/pubchem-1",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "smilesTo3D",
+      "args": {
+        "smiles": "C1=CC(=C(C(=C1)Cl)CN2C=NC3=C(N=CN=C32)NCC4=CC=CO4)Cl"
+      },
+      "result": "{\"formula\": \"C17H13Cl2N5O\", \"num_atoms\": 38, \"bond_count\": 41}"
+    }
+  ],
+  "final_answer": "已生成 3D 结构：C17H13Cl2N5O，共 38 个原子。",
+  "error": null,
+  "metrics": {}
+}

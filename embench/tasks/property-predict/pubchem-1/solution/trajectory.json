@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "task_id": "property-predict/pubchem-1",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "validateSmiles",
+      "args": {
+        "smiles": "C1=CC(=C(C(=C1)Cl)CN2C=NC3=C(N=CN=C32)NCC4=CC=CO4)Cl"
+      },
+      "result": "{\"valid\": true, \"formula\": \"C17H13Cl2N5O\", \"num_atoms\": 25, \"num_bonds\": 28}"
+    },
+    {
+      "tool": "batchPredictProperties",
+      "args": {
+        "smiles_list": [
+          "C1=CC(=C(C(=C1)Cl)CN2C=NC3=C(N=CN=C32)NCC4=CC=CO4)Cl"
+        ],
+        "properties": [
+          "Density",
+          "Td"
+        ]
+      },
+      "result": "[{\"smiles\": \"C1=CC(=C(C(=C1)Cl)CN2C=NC3=C(N=CN=C32)NCC4=CC=CO4)Cl\", \"Density\": 1.377239585778128, \"Td\": 314.2287553944451}]"
+    }
+  ],
+  "final_answer": "预测结果：Density=1.377239585778128，Td=314.2287553944451",
+  "error": null,
+  "metrics": {}
+}

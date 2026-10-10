@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task_id": "name2smiles/1-2-methylphenyl-3-3-methylpyridin-2-yl",
+  "agent": {
+    "name": "oracle"
+  },
+  "steps": [
+    {
+      "tool": "nameToSmiles",
+      "args": {
+        "name": "1-(2-methylphenyl)-3-(3-methylpyridin-2-yl)urea"
+      },
+      "result": "{\"smiles\": \"CC1=C(N=CC=C1)NC(=O)NC2=CC=CC=C2C\", \"source\": \"pubchempy\"}"
+    }
+  ],
+  "final_answer": "1-(2-methylphenyl)-3-(3-methylpyridin-2-yl)urea 的 SMILES 为 CC1=C(N=CC=C1)NC(=O)NC2=CC=CC=C2C",
+  "error": null,
+  "metrics": {}
+}

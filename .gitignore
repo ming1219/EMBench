@@ -1,0 +1,5 @@
+# 运行产物（每次阅卷生成的成绩单，可随时重新生成）
+embench/jobs/
+__pycache__/
+*.pyc
+.venv/

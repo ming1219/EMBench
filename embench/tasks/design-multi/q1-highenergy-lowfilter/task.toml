@@ -1,0 +1,60 @@
+schema_version = "1.0"
+
+[task]
+id = "design-multi/q1-highenergy-lowfilter"
+family = "design-multi"
+description = "高能低感:5候选,预测Density/DetoD/DetoP/Td+KJ+retro,在Td>200中选爆速最高(点名代号,N=5)"
+difficulty = "hard"
+tags = ["chemprop", "aizynthfinder", "generation", "pipeline"]
+legacy = { exp = "Exp15_design_multi", key = "Q1_highenergy_lowfilter" }
+
+[agent]
+timeout_sec = 1800
+
+[[verifier.checks]]
+id = "tools"
+type = "tools_used"
+all_of = ["generateAndPredict", "calculateKJ", "predictRetrosynthesis"]
+
+[[verifier.checks]]
+id = "gen_args"
+type = "arg_constraints"
+tool = "generateAndPredict"
+which = "sum"
+constraints = { num = { eq = 5 } }
+description = "候选总数 = N（允许分多次生成，如按类别各生成一批）"
+
+[[verifier.checks]]
+id = "gen_em"
+type = "arg_constraints"
+tool = "generateAndPredict"
+which = "all"
+constraints = { use_em = { eq = true, default = true } }
+
+[[verifier.checks]]
+id = "retro_args"
+type = "arg_constraints"
+tool = "predictRetrosynthesis"
+which = "all"
+constraints = { max_routes = { le = 3 }, time_limit = { le = 30 } }
+description = "逆合成按指令的小参数搜索（避免 120s 慢搜）"
+
+[[verifier.checks]]
+id = "coverage"
+type = "candidate_coverage"
+gate = ["coverage"]
+downstream = { calculateKJ = "smiles", predictRetrosynthesis = "smiles" }
+description = "每个生成候选都走完 KJ + 逆合成；consistency（下游输入来自生成结果）只报告不卡 pass"
+
+[[verifier.checks]]
+id = "recommend"
+type = "answer_contains"
+any_of = ["推荐", "建议", "最优", "最佳", "首选"]
+min_length = 15
+description = "最终回答给出推荐结论"
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 12
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"

@@ -1,0 +1,31 @@
+schema_version = "1.0"
+
+[task]
+id = "name2smiles/ng"
+family = "name2smiles"
+description = "名称→SMILES：NG"
+difficulty = "easy"
+tags = ["builtin"]
+legacy = { exp = "Exp1_name_to_smiles", key = "NG" }
+
+[agent]
+timeout_sec = 180
+
+[[verifier.checks]]
+id = "trajectory"
+type = "tool_calls_match"
+ordered = true
+calls = [{ tool = "nameToSmiles", args = { name = "NG" } }]
+description = "调用 nameToSmiles 且 name 正确（别名 CL20/CL-20 视为相同）"
+
+[[verifier.checks]]
+id = "answer"
+type = "answer_smiles"
+expected = ["O=[N+]([O-])OCC(O[N+](=O)[O-])CO[N+](=O)[O-]"]
+description = "最终回答给出正确 SMILES（canonical 比较，写法不同不扣分）"
+
+[[verifier.checks]]
+id = "budget"
+type = "call_budget"
+max_calls = 1
+description = "调用数不超过参考轨迹（软指标，不影响 pass）"
