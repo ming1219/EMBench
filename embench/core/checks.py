@@ -30,6 +30,7 @@ task.toml 里每个 [[verifier.checks]] 对应这里一个注册过的检查函�
 from __future__ import annotations
 
 import importlib.util
+import re
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -462,6 +463,60 @@ def answer_contains(traj: Trajectory, p: dict, task) -> CheckResult:
     conds = ([any(k in ans for k in any_of)] if any_of else []) + [k in ans for k in all_of]
     score = _ratio(sum(conds), len(conds)) if conds else 1.0
     return CheckResult("", "", {"answer": score}, None, True, detail="ok" if score == 1 else "关键词缺失")
+
+
+RECOMMEND_KEYWORDS = ("推荐", "建议", "首选", "最优", "最佳", "优先")
+# 含这些说法的小句视为否定/暂缓：其中的分子是「被排除的」，不是「被推荐的」
+NEGATION_MARKERS = ("不推荐", "不建议", "不予", "无法推荐", "不能推荐", "不宜", "暂缓", "暂不",
+                    "证据不足", "无法作出", "无法给出", "排除", "淘汰", "避免选", "不考虑")
+_CLAUSE_SPLIT = re.compile(r"[。！？!?；;\n，,]")
+
+
+def recommended_smiles(answer, keywords=RECOMMEND_KEYWORDS, negations=NEGATION_MARKERS) -> set:
+    """从最终回答里找出「被推荐的分子」（canonical SMILES 集合）。
+
+    把回答切成小句；含推荐词且不含否定/暂缓说法的小句是推荐句，
+    推荐句里出现的分子即被推荐的分子。只是被列举、被比较或被排除的分子不算。
+    """
+    if not isinstance(answer, str):
+        return set()
+    out = set()
+    for clause in _CLAUSE_SPLIT.split(answer):
+        if any(k in clause for k in keywords) and not any(n in clause for n in negations):
+            out |= extract_smiles(clause)
+    return out
+
+
+@register(
+    "answer_recommends_candidate",
+    params={"source_tool": False, "source_field": False, "min_count": False,
+            "keywords": False, "negations": False},
+    dimensions=("answer",),
+)
+def answer_recommends_candidate(traj: Trajectory, p: dict, task) -> CheckResult:
+    """最终回答必须明确推荐至少 min_count 个分子，且被推荐的分子**全部**来自本次生成结果。
+
+    比 answer_mentions_candidate 严格：后者只看回答里有没有提到生成过的分子，
+    所以「候选包括 A，建议暂缓」或「候选包括 A，推荐生成集外的 B」都能蒙混过关；
+    本检查只看推荐句里的分子：暂缓/拒答 → 没有被推荐的分子 → 失败；推荐了集外分子 → 失败。
+    """
+    G = _generated_set(traj, p.get("source_tool", "generateAndPredict"), p.get("source_field", "generated_molecules"))
+    if G is None:
+        return CheckResult("", "", {"answer": None}, None, True, detail="未记录生成结果，无法核对推荐对象")
+    if traj.error:
+        return CheckResult("", "", {"answer": 0.0}, None, True, detail="运行出错，无有效回答")
+    rec = recommended_smiles(traj.final_answer, tuple(p.get("keywords", RECOMMEND_KEYWORDS)),
+                             tuple(p.get("negations", NEGATION_MARKERS)))
+    outside = rec - G
+    need = p.get("min_count", 1)
+    if outside:
+        detail = f"推荐了 {len(outside)} 个不在本次生成结果中的分子: {sorted(outside)[:2]}"
+        return CheckResult("", "", {"answer": 0.0}, None, True, detail=detail, data={"recommended": sorted(rec)})
+    if len(rec) < need:
+        detail = "回答没有明确推荐任何分子（暂缓、拒答或只是列举）" if not rec else f"只推荐了 {len(rec)} 个，需要 ≥{need}"
+        return CheckResult("", "", {"answer": 0.0}, None, True, detail=detail, data={"recommended": sorted(rec)})
+    return CheckResult("", "", {"answer": 1.0}, None, True, detail=f"推荐了 {len(rec)} 个生成过的候选",
+                       data={"recommended": sorted(rec)})
 
 
 @register(

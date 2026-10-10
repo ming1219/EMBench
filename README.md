@@ -297,7 +297,7 @@ Grading does **not** forgive:
 - Skipping a required step, or doing steps in the wrong order
 - Passing the wrong molecule, quantity or option to a tool
 - In design tasks, leaving a candidate unanalyzed, or analyzing made-up molecules
-- Not telling the user the conclusion (the structure, or the recommended candidate). In design tasks the reply must **name a candidate that was actually generated**: refusing ("I don't recommend any candidate"), a vague "the first one", or a made-up molecule all fail
+- Not telling the user the conclusion (the structure, or the recommended candidate). In design tasks the reply must **recommend a candidate that was actually generated**. Only molecules in a recommending sentence count, so merely listing a generated molecule earlier in the reply doesn't help. Deferring ("I suggest holding off; the evidence is insufficient"), refusing, a vague "the first one", or recommending any molecule outside the generated set all fail
 - Missing evidence: when a check needs a tool result that the answer sheet doesn't contain, the task fails instead of being skipped
 
 ## 8. Tools your AI needs to provide

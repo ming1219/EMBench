@@ -133,7 +133,8 @@ max_calls = 2
 | `generation_output` | l3_value | 生成数 ≥ min_count，结果含所需性质 | `min_count`, `required_properties` |
 | `candidate_coverage` | coverage, consistency | 每个生成候选是否都走完下游；下游输入是否来自生成结果 | `downstream`, `source_tool` |
 | `answer_contains` | answer | 最终回答包含关键词，且不含任何禁用说法。注意是子串匹配：「不推荐」也包含「推荐」，拒答说法要写进 `none_of` | `any_of`, `all_of`, `none_of`, `min_length` |
-| `answer_mentions_candidate` | answer | 最终回答必须点名（给出 SMILES）至少 `min_count` 个本次真实生成过的候选；拒答、空泛回答、编造的分子都判错 | `source_tool`, `source_field`, `min_count` |
+| `answer_mentions_candidate` | answer | 最终回答必须点名（给出 SMILES）至少 `min_count` 个本次真实生成过的候选；它只判「提到了」，不判「推荐了谁」；要判推荐对象请用 `answer_recommends_candidate` | `source_tool`, `source_field`, `min_count` |
+| `answer_recommends_candidate` | answer | 最终回答必须明确推荐至少 `min_count` 个分子（给出 SMILES），且被推荐的分子**全部**来自本次生成结果。只有出现在「含推荐词、且不含否定/暂缓说法（不推荐、暂缓、证据不足……）」的小句里的分子才算被推荐；列举、比较、排除的分子都不算。因此「候选包括 A，建议暂缓」和「候选包括 A，推荐生成集外的 B」都会判错 | `source_tool`, `source_field`, `min_count`, `keywords`, `negations` |
 | `answer_smiles` | answer | 最终回答包含正确分子（canonical 比较） | `expected`, `mode` |
 | `call_budget` | efficiency | 调用数预算（软指标） | `max_calls` |
 | `python` | 自定义 | 逃生口：调用题目目录下 `tests/verify.py` 的 `verify(traj, task, params)` | `path`, `function` |

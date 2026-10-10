@@ -21,6 +21,7 @@ from embench.core.verifier import verify
 
 QUIET = {"log": lambda *_: None}
 REFUSAL = "我不推荐任何候选，也没有完成比较，这个问题我无法回答。"
+OUTSIDE = "O=[N+]([O-])c1nn[nH]n1"  # 不在任何设计题生成结果中的真实分子
 
 
 def run(agent, tasks, job_dir, **kw):
@@ -183,9 +184,43 @@ class TestRecommendationAnswer(unittest.TestCase):
 
     def test_recommend_one_and_reject_another_still_passes(self):
         for t in self.design:
-            gen = json.loads(Trajectory.load(t.solution_path).steps[0].result)["generated_molecules"]
+            gen = self._generated(t)
             answer = f"推荐候选 {gen[0]}，爆速最高；不推荐 {gen[1]}，合成路线过长。"
             self.assertTrue(self._with_answer(t, answer)["pass"], t.id)
+
+    # ---- 第二轮评审：只「提到」生成过的分子不等于推荐了它 ----
+
+    def _generated(self, task):
+        return json.loads(Trajectory.load(task.solution_path).steps[0].result)["generated_molecules"]
+
+    def test_listing_a_candidate_then_deferring_fails(self):
+        for t in self.design:
+            a = self._generated(t)[0]
+            r = self._with_answer(t, f"本次生成的候选包括 {a}。建议暂缓选择，现有证据不足以作出结论。")
+            self.assertFalse(r["pass"], t.id)
+            self.assertLess(r["dimensions"]["answer"], 1.0, t.id)
+
+    def test_listing_a_candidate_then_recommending_an_outside_molecule_fails(self):
+        for t in self.design:
+            gen = self._generated(t)
+            self.assertNotIn(OUTSIDE, gen)
+            r = self._with_answer(t, f"本次生成的候选包括 {gen[0]}。最终推荐另一个分子 {OUTSIDE}；它从未出现在本次生成结果中。")
+            self.assertFalse(r["pass"], t.id)
+            self.assertLess(r["dimensions"]["answer"], 1.0, t.id)
+
+    def test_recommending_both_a_generated_and_an_outside_molecule_fails(self):
+        for t in self.design:
+            a = self._generated(t)[0]
+            self.assertFalse(self._with_answer(t, f"推荐 {a} 和 {OUTSIDE} 两个分子。")["pass"], t.id)
+
+    def test_common_recommendation_formats_pass(self):
+        for t in self.design:
+            gen = self._generated(t)
+            for answer in (f"**最终推荐：** `{gen[0]}`",
+                           f"| 推荐候选 | {gen[0]} |",
+                           f"本次生成的候选包括 {gen[0]}、{gen[1]}。综合比较后首选 {gen[1]}。",
+                           f"硝胺类推荐 {gen[0]}；硝基芳烃类推荐 {gen[1]}。"):
+                self.assertTrue(self._with_answer(t, answer)["pass"], (t.id, answer))
 
 
 if __name__ == "__main__":

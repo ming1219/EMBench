@@ -19,42 +19,42 @@
       "family": "design-multi",
       "difficulty": "hard",
       "description": "高能低感:5候选,预测Density/DetoD/DetoP/Td+KJ+retro,在Td>200中选爆速最高(点名代号,N=5)",
-      "hash": "0455ab5c84f8"
+      "hash": "ac1938ff33c9"
     },
     {
       "id": "design-multi/q2-energy-vs-synthesis",
       "family": "design-multi",
       "difficulty": "hard",
       "description": "能量-合成双目标:5候选,预测Density/DetoQ/HOF_S/DetoD+KJ+retro,推荐爆热最高且合成步数最少(点名代号,N=5)",
-      "hash": "24abb2546fc8"
+      "hash": "2d488cd3ed76"
     },
     {
       "id": "design-multi/q3-two-category-compare",
       "family": "design-multi",
       "difficulty": "hard",
       "description": "分类fan-out+跨类聚合:硝胺/硝基芳烃各2候选,预测Density/DetoD/Td+KJ+retro,每类推荐1个最优(点名代号,分类)",
-      "hash": "73489f41fd26"
+      "hash": "8ff8e41c955d"
     },
     {
       "id": "design-pipeline/q1-density-hof",
       "family": "design-pipeline",
       "difficulty": "hard",
       "description": "含能分子设计流水线：3 候选 × (KJ + 逆合成) + 推荐",
-      "hash": "03ffc9a8be34"
+      "hash": "bd066e75569c"
     },
     {
       "id": "design-pipeline/q2-density-detod",
       "family": "design-pipeline",
       "difficulty": "hard",
       "description": "含能分子设计流水线：3 候选 × (KJ + 逆合成) + 推荐",
-      "hash": "afaa7c6c6e58"
+      "hash": "64f63e0065d2"
     },
     {
       "id": "design-pipeline/q3-hof-td",
       "family": "design-pipeline",
       "difficulty": "hard",
       "description": "含能分子设计流水线：3 候选 × (KJ + 逆合成) + 推荐",
-      "hash": "b5d0760c9fbf"
+      "hash": "07d6f100b4d4"
     },
     {
       "id": "generate-predict/q1-num5-density-detod",
