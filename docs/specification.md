@@ -130,7 +130,7 @@ Unknown parameters, missing required parameters and unknown check types are all 
 | `tools_used` | l1_tool | Only whether certain tools were called | `all_of`, `none_of` |
 | `arg_constraints` | l2_args | Argument constraints (for generation tasks with random outputs) | `tool`, `constraints`, `which`=first/all/any/sum |
 | `tool_result_values` | l3_value | Tool output fields match reference values | `tool`, `expected`, `rel_tol`, `abs_tol`, `match_smiles`, `which` |
-| `generation_output` | l3_value | Number generated ≥ min_count, results include the required properties | `min_count`, `required_properties` |
+| `generation_output` | l3_value | At least `min_count` **valid** molecules were generated (`null`, empty or unparseable entries don't count), and at least `min_count` of them have a record whose required properties are all finite numbers. Faking either with `null` fails and is reported under `invalid_evidence` | `min_count`, `required_properties` |
 | `candidate_coverage` | coverage, consistency | Every generated candidate goes through the downstream tools; downstream inputs come from the generated set | `downstream`, `source_tool` |
 | `answer_contains` | answer | The final reply contains keywords and none of the forbidden phrases. Substring matching: "不推荐" contains "推荐", so list refusals in `none_of` | `any_of`, `all_of`, `none_of`, `min_length` |
 | `answer_mentions_candidate` | answer | The final reply names (by SMILES) at least `min_count` candidates that were actually generated in this run; it only checks that a generated molecule is **mentioned**; to check **what is recommended**, use `answer_recommends_candidate` | `source_tool`, `source_field`, `min_count` |
@@ -159,6 +159,7 @@ In `tool_calls_match`, arguments not declared in the expected call are ignored; 
 ## 5. Grading semantics
 
 - **pass**: every `required` check passes, **and none of them lacks evidence**. A required check that cannot decide (e.g. the trajectory has no tool results) makes the task fail; the reward lists it in `missing_evidence` and sets `incomplete: true`. A task may opt out with `[verifier] allow_incomplete = true`
+- **invalid evidence**: tool results that exist but are `null`, non-numeric or unparseable are not evidence. The checks reading them fail outright (never skipped, so `allow_incomplete` can't excuse them); the reward lists them in `invalid_evidence` and sets `incomplete: true`
 - **reward** = float(pass), the binary headline metric
 - **dimensions**: the mean of each dimension over all checks, for diagnosis
 
@@ -183,7 +184,7 @@ In `tool_calls_match`, arguments not declared in the expected call are ignored; 
 | Dimension means / avg. tool calls / redundancy / time / tokens | Diagnostics and cost |
 | Duplicate / unverified trials | Trials whose trajectory is identical to an earlier trial of the same task, and trials without a recorded agent identity (shown as warnings) |
 
-**Job integrity.** Every `reward.json` records the agent that produced it. Resuming a job with a different agent, or after its tasks changed, is refused. Aggregation rejects any trial produced by an agent other than the job's.
+**Job integrity.** Every `reward.json` records the agent that produced it and the version (`task_hash`) of the task it was graded against. Resuming a job is refused when the agent differs, or when **any** task in the job with existing results has changed since it was graded (not just the tasks selected this time); run `score` first. A resume only updates the recorded versions of the tasks it actually grades. Aggregation rejects any trial produced by another agent or graded against another task version.
 
 ## 7. Maintenance
 
@@ -212,6 +213,7 @@ python -m unittest discover -s embench/tests -t .
 | An empty trajectory fails | Scoring points for doing nothing |
 | The oracle with its last step removed fails | Overly lenient checks; a last step no check constrains |
 | The oracle with all tool results removed fails, whenever a required check then lacks evidence | Passing without evidence |
+| The oracle with every tool-result value replaced by `null` fails (structure and field names kept) | Passing with fake evidence |
 | Every negative in `solution/negatives/` fails | Known typical mistakes slipping through |
 | registry.json matches the directories and its hashes are current | A stale task index |
 

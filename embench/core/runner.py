@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 
 from .metrics import aggregate
-from .task import PACKAGE_DIR, Task, load_tasks
+from .task import PACKAGE_DIR, TASKS_DIR, Task, load_tasks
 from .trajectory import Trajectory
 from .verifier import verify
 
@@ -89,25 +89,28 @@ def _reset_job(job_dir: Path) -> None:
         (job_dir / name).unlink(missing_ok=True)
 
 
-def _check_resume(job_dir: Path, agent_info: dict, tasks: list[Task]) -> dict | None:
-    """续跑前核对：同一个 job 只能属于同一个 agent，已有结果的题目定义不能被改过。"""
+def _load_manifest(job_dir: Path) -> dict | None:
     path = job_dir / "config.json"
     if not path.is_file():
         if (job_dir / "trials").is_dir() and any((job_dir / "trials").iterdir()):
             raise JobError(f"job {job_dir.name} 有成绩文件但缺少 config.json，无法确认是谁交的卷。"
                            "请换一个 --job 名，或加 --force 清空后重跑")
         return None
-    old = _read_json(path)
+    return _read_json(path)
+
+
+def _check_resume(job_dir: Path, old: dict, agent_info: dict, all_tasks: dict) -> None:
+    """续跑前核对：同一个 job 只能属于同一个 agent；job 里**任何**已有成绩的题（不只是本次选中的题）
+    在上次判分后都不能被修改过，否则整个 job 的成绩单会混入按旧定义判出的结果。"""
     if old.get("agent") != agent_info:
         raise JobError(f"job {job_dir.name} 已由另一个 agent 运行过（{_label(old.get('agent', {}))}），"
                        f"本次是（{_label(agent_info)}）。请换一个 --job 名，或加 --force 清空该 job 从头重跑")
-    changed = [t.id for t in tasks
-               if t.id in old.get("tasks", {}) and old["tasks"][t.id] != t.content_hash()
-               and (job_dir / "trials" / t.id.replace("/", "__")).is_dir()]
+    changed = [tid for tid, h in old.get("tasks", {}).items()
+               if tid in all_tasks and all_tasks[tid].content_hash() != h
+               and (job_dir / "trials" / tid.replace("/", "__")).is_dir()]
     if changed:
-        raise JobError(f"{len(changed)} 道题在上次运行后被修改过（如 {changed[0]}），已有成绩按旧定义判出。"
-                       "请先用 `score` 按新定义重判，或加 --force 从头重跑")
-    return old
+        raise JobError(f"job {job_dir.name} 中有 {len(changed)} 道题在上次判分后被修改过（如 {changed[0]}），"
+                       "已有成绩按旧定义判出。请先用 `score` 按新定义重判整个 job，或加 --force 从头重跑")
 
 
 async def run_job(agent, tasks: list[Task], job_dir: Path, n_trials: int = 1,
@@ -122,16 +125,22 @@ async def run_job(agent, tasks: list[Task], job_dir: Path, n_trials: int = 1,
     await agent.setup()
     try:
         agent_info = agent.info()
-        old = _check_resume(job_dir, agent_info, tasks)
+        old = _load_manifest(job_dir)
         all_ids = dict.fromkeys(list((old or {}).get("tasks", {})) + [t.id for t in tasks])
-        all_tasks = {t.id: t for t in load_tasks(list(all_ids))} | {t.id: t for t in tasks}
+        # job 里的其他题从本次题目所在的同一题库加载（而不是默认题库），版本核对才有意义
+        root = tasks[0].root if tasks else TASKS_DIR
+        all_tasks = {t.id: t for t in load_tasks(list(all_ids), root)} | {t.id: t for t in tasks}
+        if old is not None:
+            _check_resume(job_dir, old, agent_info, all_tasks)
         manifest = {
             "job": job_dir.name,
             "created": (old or {}).get("created") or datetime.datetime.now().isoformat(timespec="seconds"),
             "agent": agent_info,
             "n_trials": max(n_trials, (old or {}).get("n_trials", 0)),
             "environment": environment_info(),
-            "tasks": {tid: t.content_hash() for tid, t in all_tasks.items()},
+            # 只更新本次选中（会被判分）的题；其余题保留上次判分时的版本号
+            "tasks": {**(old or {}).get("tasks", {}), **{t.id: t.content_hash() for t in tasks}},
+            "tasks_root": root.resolve().as_posix(),
         }
         _write_json(job_dir / "config.json", manifest)
 
@@ -181,6 +190,9 @@ def collect_trials(job_dir: Path, tasks: list[Task], n_trials: int) -> list[dict
             if "agent" in reward and reward["agent"] != manifest["agent"]:
                 raise JobError(f"{t.id} 第 {k} 次试验由另一个 agent 产生（{_label(reward['agent'])}），"
                                f"与 job 记录的（{_label(manifest['agent'])}）不一致，拒绝汇总")
+            if reward.get("task_hash") != t.content_hash():
+                raise JobError(f"{t.id} 第 {k} 次试验的成绩按另一版题目定义判出（{reward.get('task_hash')} ≠ "
+                               f"当前 {t.content_hash()}），拒绝汇总。请先用 `score` 按当前定义重判")
             traj = _read_json(d / "trajectory.json")
             fp = _fingerprint(traj)
             trials.append({"task_id": t.id, "family": t.family, "trial": k, "reward": reward,
@@ -210,10 +222,12 @@ def finalize(job_dir: Path, tasks: list[Task], n_trials: int) -> dict:
     return result
 
 
-def rescore_job(job_dir: Path, log=print) -> dict:
+def rescore_job(job_dir: Path, log=print, tasks_root: Path | None = None) -> dict:
     """用当前任务定义重跑 verifier（不调用 agent）；保留每个 trial 原有的 agent 身份。"""
     manifest = _read_json(job_dir / "config.json")
-    tasks = load_tasks(list(manifest["tasks"]))
+    recorded = manifest.get("tasks_root")
+    root = Path(tasks_root) if tasks_root else (Path(recorded) if recorded and Path(recorded).is_dir() else TASKS_DIR)
+    tasks = load_tasks(list(manifest["tasks"]), root)
     by_id = {t.id: t for t in tasks}
     missing = sorted(set(manifest["tasks"]) - set(by_id))
     if missing:

@@ -299,6 +299,7 @@ Grading does **not** forgive:
 - In design tasks, leaving a candidate unanalyzed, or analyzing made-up molecules
 - Not telling the user the conclusion (the structure, or the recommended candidate). In design tasks the reply must **recommend a candidate that was actually generated**. Only molecules in a recommending sentence count, so merely listing a generated molecule earlier in the reply doesn't help. Deferring ("I suggest holding off; the evidence is insufficient"), refusing, a vague "the first one", or recommending any molecule outside the generated set all fail
 - Missing evidence: when a check needs a tool result that the answer sheet doesn't contain, the task fails instead of being skipped
+- Fake evidence: tool results whose values are `null` (or molecules that can't be parsed) don't count. A list of `null` candidates, or property fields that exist but are all `null`, fails the task and is flagged as incomplete
 
 ## 8. Tools your AI needs to provide
 
@@ -355,7 +356,7 @@ Open `report.md` in an editor that supports UTF-8 (e.g. VS Code, Typora), or run
 That's normal: language models are random to some degree. Let your AI do each task 3 times, save every attempt as its own answer sheet (`trial_0.json` … `trial_2.json`), grade with `-k 3`, and look at pass^3 (the share solved every time). The built-in demo students (`oracle`, `nop`) always give the same answer, so they refuse `-k` above 1.
 
 **If the grading rules change, does the AI have to retake the exam?**
-No. Run `python -m embench score embench\jobs\<some-run>` to regrade with the new rules. The answer sheets stay the same.
+No. Run `python -m embench score embench\jobs\<some-run>` to regrade with the new rules. The answer sheets stay the same. Until you do, that job refuses to resume, even for tasks you didn't change, so a report never mixes results graded under old and new rules.
 
 **Grading was interrupted?**
 Run the same command again with the same `--job` name. Tasks already graded are skipped automatically. A job belongs to one AI: if you grade a **different** AI under an existing job name, EMBench refuses rather than mixing up the two AIs' results. Use a new `--job` name, or add `--force` to wipe that job and start over.

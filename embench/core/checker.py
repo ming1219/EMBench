@@ -16,6 +16,8 @@ verifier 正确性（不需要 LLM，秒级完成）
   - 截断 oracle（去掉最后一步）：必须 pass=False（防检查项过松）
   - 去掉全部工具结果的 oracle：只要有 required 检查因此缺少证据，就必须 pass=False
     （防「没有证据也算通过」；题目显式 allow_incomplete = true 时除外）
+  - 工具结果的值全部换成 null 的 oracle（结构和字段名保留）：同样必须 pass=False
+    （防「交一堆 null 冒充证据」）
   - solution/negatives/*.json：手写反例，必须 pass=False
 
 注意：这些自检只证明「参考答案能通过」以及「上述几类已知错法会被抓出」，
@@ -28,6 +30,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .checks import CHECKS, COMMON_PARAMS
+from .normalize import parse_json
 from .task import REQUIRED_FILES, TASKS_DIR, Task, discover_task_dirs, load_task
 from .trajectory import Trajectory
 from .verifier import verify
@@ -130,11 +133,29 @@ def validate_verifier(task: Task) -> list[str]:
         rs = verify(task, stripped)
         if rs["incomplete"] and rs["pass"]:
             errs.append(f"去掉全部工具结果后仍通过（缺证据的检查: {rs['missing_evidence']}）—— 没有证据也算通过")
+        if rs["incomplete"]:  # 有检查依赖工具结果 → 用 null 冒充的结果也必须判失败
+            nulled = Trajectory.from_dict(oracle.to_dict())
+            for st in nulled.steps:
+                st.result = _null_out(st.result)
+            if verify(task, nulled)["pass"]:
+                errs.append("工具结果的值全部换成 null 后仍通过 —— null 被当成了证据")
 
     for neg in task.negative_paths:
         if verify(task, Trajectory.load(neg))["pass"]:
             errs.append(f"反例 {neg.name} 竟然通过")
     return errs
+
+
+def _null_out(result):
+    """保留工具结果的结构和字段名，把所有值换成 null（列表长度不变）。"""
+    def walk(v):
+        if isinstance(v, dict):
+            return {k: walk(x) for k, x in v.items()}
+        if isinstance(v, list):
+            return [walk(x) for x in v]
+        return None
+    obj = parse_json(result)
+    return json.dumps(walk(obj)) if isinstance(obj, (dict, list)) else None
 
 
 def check_task(task_dir: Path, tasks_root: Path = TASKS_DIR) -> TaskReport:

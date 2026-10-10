@@ -72,6 +72,11 @@ class Task:
         d = self.dir / "solution" / "negatives"
         return sorted(d.glob("*.json")) if d.is_dir() else []
 
+    @property
+    def root(self) -> Path:
+        """题库根目录（id = 相对于它的路径）。"""
+        return self.dir.parents[len(self.id.split("/")) - 1]
+
     def content_hash(self) -> str:
         """任务版本指纹：task.toml + instruction.md + tests/ 的 sha256 前 12 位。
 

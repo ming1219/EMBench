@@ -130,7 +130,7 @@ max_calls = 2
 | `tools_used` | l1_tool | 只看是否调用过某些工具 | `all_of`, `none_of` |
 | `arg_constraints` | l2_args | 参数约束（适合输出随机的生成类任务） | `tool`, `constraints`, `which`=first/all/any/sum |
 | `tool_result_values` | l3_value | 工具输出字段与参考值一致 | `tool`, `expected`, `rel_tol`, `abs_tol`, `match_smiles`, `which` |
-| `generation_output` | l3_value | 生成数 ≥ min_count，结果含所需性质 | `min_count`, `required_properties` |
+| `generation_output` | l3_value | 至少生成 `min_count` 个**有效**分子（`null`、空串、无法解析的不算），且其中至少 `min_count` 个分子有一条记录、所需性质全部是有限数值。用 `null` 凑数量或凑字段都判失败，并记入 `invalid_evidence` | `min_count`, `required_properties` |
 | `candidate_coverage` | coverage, consistency | 每个生成候选是否都走完下游；下游输入是否来自生成结果 | `downstream`, `source_tool` |
 | `answer_contains` | answer | 最终回答包含关键词，且不含任何禁用说法。注意是子串匹配：「不推荐」也包含「推荐」，拒答说法要写进 `none_of` | `any_of`, `all_of`, `none_of`, `min_length` |
 | `answer_mentions_candidate` | answer | 最终回答必须点名（给出 SMILES）至少 `min_count` 个本次真实生成过的候选；它只判「提到了」，不判「推荐了谁」；要判推荐对象请用 `answer_recommends_candidate` | `source_tool`, `source_field`, `min_count` |
@@ -159,6 +159,7 @@ max_calls = 2
 ## 5. 判分语义
 
 - **pass**：所有 `required` 检查都通过，**且没有任何一项缺少证据**。required 检查无法判定时（例如轨迹没有记录工具结果），整题判不通过，reward 在 `missing_evidence` 中列出这些检查，并标记 `incomplete: true`。题目可以用 `[verifier] allow_incomplete = true` 显式放宽
+- **证据无效**：工具结果存在，但值是 `null`、非数值或无法解析，不算证据。读取它们的检查直接判失败（不记为跳过，所以 `allow_incomplete` 也放不过）；reward 在 `invalid_evidence` 中列出这些检查，并标记 `incomplete: true`
 - **reward** = float(pass)，二值主指标
 - **dimensions**：各维度在所有检查上的均值，用于诊断
 
@@ -183,7 +184,7 @@ max_calls = 2
 | 维度均值 / 平均调用数 / 冗余 / 耗时 / token | 诊断与成本 |
 | 重复 / 无身份的 trial | 与同题前一次试验轨迹完全相同的 trial，以及没有记录 agent 身份的 trial（以警告形式显示） |
 
-**job 完整性**：每个 `reward.json` 都记录产生它的 agent。用不同的 agent 续跑某个 job，或在题目改过之后续跑，都会被拒绝；汇总时，凡是不属于该 job 的 agent 产生的 trial，一律拒绝计入。
+**job 完整性**：每个 `reward.json` 都记录产生它的 agent，以及判分时题目的版本（`task_hash`）。续跑时，agent 不同、或者 job 里**任何**已有成绩的题（不只是本次选中的题）在判分后被改过，都会被拒绝，需先运行 `score`；续跑只更新本次真正判分的题的版本记录。汇总时，由其他 agent 产生、或按另一版题目判出的 trial，一律拒绝计入。
 
 ## 7. 维护流程
 
@@ -212,6 +213,7 @@ python -m unittest discover -s embench/tests -t .
 | 空轨迹必须失败 | 什么都不做也能得分 |
 | 去掉最后一步的 oracle 必须失败 | 检查过松，最后一步没有被任何检查约束 |
 | 去掉全部工具结果的 oracle 必须失败（只要有 required 检查因此缺少证据） | 没有证据也算通过 |
+| 工具结果的值全部换成 `null` 的 oracle 必须失败（保留结构和字段名） | 用 null 冒充证据也能通过 |
 | `solution/negatives/` 中每个反例必须失败 | 已知的典型错误被放过 |
 | registry.json 与目录一一对应且 hash 最新 | 题库索引过期 |
 

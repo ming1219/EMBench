@@ -30,17 +30,20 @@ task.toml 里每个 [[verifier.checks]] 对应这里一个注册过的检查函�
 from __future__ import annotations
 
 import importlib.util
+import math
 import re
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .normalize import (
     DEFAULT_ARG_RULES,
+    HAS_RDKIT,
     canonical_smiles,
     coerce_list,
     coerce_number,
     extract_smiles,
     get_arg,
+    is_valid_smiles,
     numbers_close,
     normalize_value,
     parse_json,
@@ -339,23 +342,28 @@ def tool_result_values(traj: Trajectory, p: dict, task) -> CheckResult:
     rel, abs_ = p.get("rel_tol", 1e-2), p.get("abs_tol", 1e-6)
     expected = p["expected"]
 
-    best, best_fail = -1.0, []
+    best, best_fail, best_nulls = -1.0, [], 0
     for step in with_result:
         rec = _pick_record(_result_obj(step), p.get("match_smiles"))
-        ok_n, fails = 0, []
+        ok_n, fails, nulls = 0, [], 0
         for f, ev in expected.items():
             av = rec.get(f)
             if isinstance(ev, (int, float)) and not isinstance(ev, bool):
                 ok = numbers_close(av, ev, rel_tol=rel, abs_tol=abs_)
+                nulls += not _is_real_number(av)
             else:
                 ok = av == ev
+                nulls += av is None
             ok_n += ok
             if not ok:
                 fails.append(f"{f}: {av!r} vs {ev!r}")
         score = _ratio(ok_n, len(expected))
         if score > best:
-            best, best_fail = score, fails
-    return CheckResult("", "", {"l3_value": best}, None, True, detail="; ".join(best_fail[:4]) or "ok")
+            best, best_fail, best_nulls = score, fails, nulls
+    invalid = best < 1 and best_nulls > 0
+    return CheckResult("", "", {"l3_value": best}, None, True,
+                       detail=("证据无效（关键字段为 null 或非数值）；" if invalid else "") + ("; ".join(best_fail[:4]) or "ok"),
+                       data={"invalid_evidence": True} if invalid else {})
 
 
 @register(
@@ -364,7 +372,11 @@ def tool_result_values(traj: Trajectory, p: dict, task) -> CheckResult:
     dimensions=("l3_value",),
 )
 def generation_output(traj: Trajectory, p: dict, task) -> CheckResult:
-    """生成类工具的输出：生成数 ≥ min_count，且 results 里含全部所需性质。"""
+    """生成类工具的输出：真实生成的分子数 ≥ min_count，且至少 min_count 个生成的分子有全部所需性质的数值。
+
+    只认真实证据：null、空串、解析不了的 SMILES 不算生成了分子；性质值必须是有限数值，
+    并且记录里的 smiles 必须是本次生成的分子。用 null 凑数量或凑字段 → 判失败并标记「证据无效」。
+    """
     tool = p.get("tool", "generateAndPredict")
     calls = traj.calls(tool)
     if not calls:
@@ -372,36 +384,82 @@ def generation_output(traj: Trajectory, p: dict, task) -> CheckResult:
     with_result = [s for s in calls if s.has_result]
     if not with_result:
         return CheckResult("", "", {"l3_value": None}, None, True, detail="轨迹未记录工具结果，跳过")
-    props = set(p.get("required_properties") or [])
-    best, best_detail = 0.0, ""
+    props = list(p.get("required_properties") or [])
+    need = p["min_count"]
+    best, best_detail, best_invalid = -1.0, "", False
     for step in with_result:
         obj = _result_obj(step)
         if not isinstance(obj, dict):
             continue
-        n = len(obj.get("generated_molecules") or [])
-        count_ok = n >= p["min_count"]
-        results = obj.get("results") or []
-        sample = results[0] if isinstance(results, list) and results and isinstance(results[0], dict) else {}
-        props_ok = props.issubset(sample.keys()) if props else True
+        valid, bad = _valid_molecules(obj.get("generated_molecules"))
+        n_valid = len(set(valid))
+        count_ok = n_valid >= need
+        null_props, n_with_props = False, 0
+        if props:
+            results = obj.get("results") if isinstance(obj.get("results"), list) else []
+            covered = set()
+            for r in results:
+                if not isinstance(r, dict):
+                    continue
+                if any(not _is_real_number(r.get(k)) for k in props if k in r):
+                    null_props = True
+                smi = r.get("smiles")
+                if (isinstance(smi, str) and canonical_smiles(smi) in set(valid)
+                        and all(_is_real_number(r.get(k)) for k in props)):
+                    covered.add(canonical_smiles(smi))
+            n_with_props = len(covered)
+            props_ok = n_with_props >= need
+        else:
+            props_ok = True
         score = (count_ok + props_ok) / 2
-        if score >= best:
-            best = score
-            best_detail = f"生成 {n} 个(需≥{p['min_count']})" + ("" if props_ok else f"，缺性质 {sorted(props - set(sample))}")
-    return CheckResult("", "", {"l3_value": best}, None, True, detail=best_detail)
+        invalid = (not count_ok and bad > 0) or (not props_ok and null_props)
+        detail = f"有效生成 {n_valid} 个(需≥{need})"
+        if bad:
+            detail += f"，另有 {bad} 条无效（null/空/无法解析）"
+        if props:
+            detail += f"；有全部所需性质数值的分子 {n_with_props} 个(需≥{need})"
+        if score > best:
+            best, best_detail, best_invalid = score, detail, invalid
+    if best < 0:
+        return CheckResult("", "", {"l3_value": 0.0}, None, True, detail="工具结果不是有效的 JSON 对象")
+    if best_invalid:
+        best_detail = "证据无效：" + best_detail
+    return CheckResult("", "", {"l3_value": best}, None, True, detail=best_detail,
+                       data={"invalid_evidence": True} if best_invalid and best < 1 else {})
 
 
-def _generated_set(traj: Trajectory, tool: str, field_name: str) -> set | None:
+def _is_real_number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _valid_molecules(items) -> tuple[list, int]:
+    """(有效分子的 canonical SMILES 列表, 无效条目数)。null、空串、非字符串、RDKit 解析不了的都算无效。"""
+    valid, bad = [], 0
+    for s in items if isinstance(items, list) else []:
+        if isinstance(s, str) and s.strip() and (is_valid_smiles(s.strip()) if HAS_RDKIT else True):
+            valid.append(canonical_smiles(s))
+        else:
+            bad += 1
+    return valid, bad
+
+
+def _generated(traj: Trajectory, tool: str, field_name: str) -> tuple:
+    """(本次真实生成的分子集合 | None, 无效条目数)。调了但没录结果 → (None, 0)，表示无法判定。"""
     calls = [s for s in traj.calls(tool) if s.has_result]
     if traj.calls(tool) and not calls:
-        return None  # 调了但没录结果 → 无法判定
-    out = set()
+        return None, 0
+    out, bad = set(), 0
     for step in calls:
         obj = _result_obj(step)
         if isinstance(obj, dict):
-            for s in obj.get(field_name) or []:
-                if isinstance(s, str) and s:
-                    out.add(canonical_smiles(s))
-    return out
+            valid, n_bad = _valid_molecules(obj.get(field_name) or [])
+            out.update(valid)
+            bad += n_bad
+    return out, bad
+
+
+def _generated_set(traj: Trajectory, tool: str, field_name: str) -> set | None:
+    return _generated(traj, tool, field_name)[0]
 
 
 @register(
@@ -417,10 +475,14 @@ def candidate_coverage(traj: Trajectory, p: dict, task) -> CheckResult:
     coverage    = |G ∩ 每个下游工具覆盖集合的交集| / |G|
     consistency = 下游调用中输入 ∈ G 的比例
     """
-    G = _generated_set(traj, p.get("source_tool", "generateAndPredict"), p.get("source_field", "generated_molecules"))
+    G, bad = _generated(traj, p.get("source_tool", "generateAndPredict"), p.get("source_field", "generated_molecules"))
     if G is None:
         return CheckResult("", "", {"coverage": None, "consistency": None}, None, True, detail="未记录生成结果，跳过")
     min_c = p.get("min_candidates", 1)
+    if len(G) < min_c and bad:
+        return CheckResult("", "", {"coverage": 0.0, "consistency": 0.0}, None, True,
+                           detail=f"证据无效：生成结果中有效分子 {len(G)} 个，另有 {bad} 条 null/无法解析",
+                           data={"invalid_evidence": True})
     complete = set(G)
     total, inside = 0, 0
     per_tool = {}

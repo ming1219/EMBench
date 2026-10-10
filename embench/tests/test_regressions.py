@@ -4,6 +4,9 @@
 2. 缺少证据（轨迹没记录工具结果）的必查项被跳过，整题仍算通过
 3. 同一份轨迹重复回放，被当成独立样本，置信区间虚假收窄
 4. 关键词判推荐：「我不推荐任何候选」也含「推荐」
+5. 只「提到」生成过的分子就算推荐：「候选包括 A，建议暂缓」「候选包括 A，推荐集外的 B」
+6. 续跑子集时悄悄刷新其他题的版本记录，按旧定义判出的成绩混进报告
+7. 用 null 冒充证据：候选列表塞 null、性质值全是 null，却数值满分且不标证据不完整
 """
 import asyncio
 import json
@@ -14,7 +17,7 @@ from pathlib import Path
 
 from embench.agents.simple import NopAgent, OracleAgent, ReplayAgent
 from embench.core.metrics import aggregate, wilson
-from embench.core.runner import JobError, run_job, trial_dir
+from embench.core.runner import JobError, rescore_job, run_job, trial_dir
 from embench.core.task import TASKS_DIR, load_task, load_tasks
 from embench.core.trajectory import Trajectory
 from embench.core.verifier import verify
@@ -221,6 +224,124 @@ class TestRecommendationAnswer(unittest.TestCase):
                            f"本次生成的候选包括 {gen[0]}、{gen[1]}。综合比较后首选 {gen[1]}。",
                            f"硝胺类推荐 {gen[0]}；硝基芳烃类推荐 {gen[1]}。"):
                 self.assertTrue(self._with_answer(t, answer)["pass"], (t.id, answer))
+
+
+class TestTaskVersionOnResume(_TmpDir):
+    """评审步骤：跑 A、B → 改 A 的判分条件 → 只续跑 B → 再续跑 A。"""
+
+    def setUp(self):
+        super().setUp()
+        self.root = self.tmp / "tasks"
+        for tid in ("name2smiles/tnt", "name2smiles/rdx"):
+            shutil.copytree(TASKS_DIR / tid, self.root / tid)
+        self.job = self.tmp / "job"
+        run(OracleAgent(), [self.A(), self.B()], self.job)
+        toml = self.root / "name2smiles/tnt/task.toml"
+        toml.write_text(toml.read_text(encoding="utf-8").replace('name = "TNT"', 'name = "RDX"'), encoding="utf-8")
+
+    def A(self):
+        return load_task(self.root / "name2smiles/tnt", self.root)
+
+    def B(self):
+        return load_task(self.root / "name2smiles/rdx", self.root)
+
+    def test_resuming_another_task_is_refused_while_any_task_is_stale(self):
+        with self.assertRaises(JobError):
+            run(OracleAgent(), [self.B()], self.job)
+        with self.assertRaises(JobError):
+            run(OracleAgent(), [self.A()], self.job)
+
+    def test_stale_task_version_is_not_silently_refreshed(self):
+        old = json.loads((self.job / "config.json").read_text(encoding="utf-8"))["tasks"]["name2smiles/tnt"]
+        with self.assertRaises(JobError):
+            run(OracleAgent(), [self.B()], self.job)
+        now = json.loads((self.job / "config.json").read_text(encoding="utf-8"))["tasks"]["name2smiles/tnt"]
+        self.assertEqual(old, now)
+        self.assertNotEqual(now, self.A().content_hash())
+
+    def test_rescore_applies_new_definition_then_resume_works(self):
+        self.assertEqual(rescore_job(self.job, **QUIET)["overall"]["pass@1"], 0.5)
+        self.assertEqual(run(OracleAgent(), [self.A(), self.B()], self.job)["overall"]["pass@1"], 0.5)
+
+    def test_result_graded_under_another_version_is_rejected_at_aggregation(self):
+        rescore_job(self.job, **QUIET)
+        reward_path = trial_dir(self.job, "name2smiles/rdx", 0) / "reward.json"
+        reward = json.loads(reward_path.read_text(encoding="utf-8"))
+        reward["task_hash"] = "000000000000"
+        reward_path.write_text(json.dumps(reward), encoding="utf-8")
+        with self.assertRaises(JobError):
+            run(OracleAgent(), [self.B()], self.job)
+
+
+class TestNullIsNotEvidence(unittest.TestCase):
+    """保留原调用和最终回答，只把工具结果换成 null 填充。"""
+
+    def _tamper(self, task, mutate):
+        traj = Trajectory.load(task.solution_path)
+        step = traj.calls("generateAndPredict")[0]
+        obj = json.loads(step.result)
+        mutate(obj)
+        step.result = json.dumps(obj)
+        return verify(task, traj)
+
+    @staticmethod
+    def _props(task):
+        return next(c for c in task.checks if c["type"] == "generation_output").get("required_properties") or []
+
+    def test_reviewer_case_null_molecules_one_record_null_values(self):
+        for t in load_tasks(["generate-predict"]):
+            props = self._props(t)
+
+            def mutate(obj):
+                obj["generated_molecules"] = [None] * len(obj["generated_molecules"])
+                obj["results"] = [{**{p: None for p in props}, "smiles": None}] if props else []
+            r = self._tamper(t, mutate)
+            self.assertFalse(r["pass"], t.id)
+            self.assertLess(r["dimensions"]["l3_value"], 1.0, t.id)
+            self.assertTrue(r["incomplete"], t.id)
+            self.assertIn("gen_output", r["invalid_evidence"], t.id)
+
+    def test_real_molecules_but_null_property_values_fail(self):
+        for t in load_tasks(["generate-predict"]):
+            props = self._props(t)
+            if not props:
+                continue
+
+            def mutate(obj):
+                for rec in obj["results"]:
+                    rec.update({p: None for p in props})
+            r = self._tamper(t, mutate)
+            self.assertFalse(r["pass"], t.id)
+            self.assertIn("gen_output", r["invalid_evidence"], t.id)
+
+    def test_property_records_for_molecules_never_generated_do_not_count(self):
+        for t in load_tasks(["generate-predict"]):
+            if not self._props(t):
+                continue
+
+            def mutate(obj):
+                for rec in obj["results"]:
+                    rec["smiles"] = OUTSIDE
+            self.assertFalse(self._tamper(t, mutate)["pass"], t.id)
+
+    def test_design_tasks_with_null_candidates_fail_and_are_flagged(self):
+        for t in load_tasks(["design-*"]):
+            def mutate(obj):
+                obj["generated_molecules"] = [None] * len(obj["generated_molecules"])
+            r = self._tamper(t, mutate)
+            self.assertFalse(r["pass"], t.id)
+            self.assertTrue(r["incomplete"], t.id)
+
+    def test_null_numeric_tool_result_is_flagged(self):
+        t = load_tasks(["ob-kj/tnt"])[0]
+        traj = Trajectory.load(t.solution_path)
+        step = traj.calls("calculateKJ")[0]
+        obj = json.loads(step.result)
+        obj.update({k: None for k in ("DetoD", "DetoP", "DetoT", "DetoV", "DetoQ")})
+        step.result = json.dumps(obj)
+        r = verify(t, traj)
+        self.assertFalse(r["pass"])
+        self.assertIn("kj_values", r["invalid_evidence"])
 
 
 if __name__ == "__main__":
