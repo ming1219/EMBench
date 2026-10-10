@@ -1,8 +1,8 @@
 **English** | [简体中文](README.zh-CN.md)
 
-# EMBench: an exam for chemistry AI assistants
+# EMBench: a framework for writing and grading exams for AI assistants
 
-**EMBench** checks whether an AI assistant can correctly carry out **chemistry computation tasks** for you: looking up molecular structures, predicting properties, designing new molecules, and more.
+**EMBench** is a framework for checking whether an AI assistant that uses tools really did a task right. Its focus is the **workflow**, not any particular question set: how to write a task so that it can be verified, how to grade it automatically, and how to make sure the grading itself can be trusted.
 
 Today's AI assistants do more than chat. They call "tools" on their own: look up a structure, predict a density, compute a detonation velocity, plan a synthesis route.
 EMBench grades exactly that process:
@@ -10,7 +10,7 @@ EMBench grades exactly that process:
 > The task says "first compute the oxygen balance, then the detonation parameters". Did the AI pick the right tools? In the right order?
 > Did it pass in the right molecule? Are the computed numbers right? Did it clearly tell you the conclusion at the end?
 
-The exam has **74 tasks** in **9 categories**, ranging from "translate a molecule's name into a structure" to "design 5 candidate molecules and recommend the best one".
+The repository ships a **seed set of chemistry tasks**, migrated from earlier experiments, to demonstrate the workflow end to end ([section 3](#3-the-seed-task-set)). They are examples, not a polished benchmark. The value is in the framework: anyone can write new tasks, check that they are sound, and grade any agent against them.
 
 ---
 
@@ -18,7 +18,7 @@ The exam has **74 tasks** in **9 categories**, ranging from "translate a molecul
 
 1. [Why EMBench](#1-why-embench)
 2. [An analogy: how EMBench works](#2-an-analogy-how-embench-works)
-3. [What's on the exam](#3-whats-on-the-exam)
+3. [The seed task set](#3-the-seed-task-set)
 4. [Getting started (about 10 minutes)](#4-getting-started-about-10-minutes)
 5. [Reading the report card](#5-reading-the-report-card)
 6. [Grading your own AI](#6-grading-your-own-ai)
@@ -59,9 +59,11 @@ Think of it as an exam:
 **The exam itself is checked too.** Every task's model answer must get full marks. A blank sheet, a sheet with the last step missing, or a sheet with a typical mistake (each task ships with such examples) must all fail.
 This makes sure the examiner neither marks correct work as wrong nor lets mistakes slip through.
 
-> Note: the task instructions are written in Chinese, because the benchmark targets Chinese-language assistants. Command output is currently in Chinese as well.
+> Note: the seed task instructions are written in Chinese, because they target Chinese-language assistants. Command output is currently in Chinese as well.
 
-## 3. What's on the exam
+## 3. The seed task set
+
+These tasks were migrated from earlier experiments to demonstrate the framework, and their quality varies. Treat them as worked examples of how to write tasks; to write your own, see [section 9](#9-writing-a-new-task).
 
 | Category (folder) | Tasks | Difficulty | What it tests |
 |---|---:|---|---|
@@ -129,7 +131,7 @@ After a few seconds the last line reads:
 74/74 题通过自检
 ```
 
-("74/74 tasks passed the self-check".) All 74 tasks are sound: model answers get full marks, and wrong answers are caught.
+("74/74 tasks passed the self-check".) Every task in the seed set is sound: model answers get full marks, and wrong answers are caught.
 
 ### Step 6: Run your first grading
 
@@ -249,7 +251,7 @@ examples/my_agent_outputs/
     └── tnt.json      ← for task embench/tasks/ob-kj/tnt/
 ```
 
-Then run the command below. `-t` lists which tasks to grade; without `-t` all 74 are graded, and tasks without an answer sheet count as blank:
+Then run the command below. `-t` lists which tasks to grade; without `-t` every task is graded, and tasks without an answer sheet count as blank:
 
 ```
 python -m embench run -a replay --replay-src examples/my_agent_outputs -t name2smiles/tnt name2smiles/rdx ob-kj/tnt --job example

@@ -104,7 +104,7 @@ def cmd_report(args) -> int:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="embench", description="EMBench 化学智能体工具调用评测基准")
+    p = argparse.ArgumentParser(prog="embench", description="EMBench 工具调用智能体评测框架")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     def add_tasks(sp):
