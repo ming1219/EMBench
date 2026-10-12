@@ -1,0 +1,22 @@
+# Merged on top of Harbor's base compose config; Harbor configures the `main` (agent) service itself.
+services:
+  main:
+    depends_on:
+      tool-server:
+        condition: service_healthy
+
+  tool-server:
+    build:
+      context: ./tool-server
+      args:
+        PIP_INDEX_URL: "{{PIP_INDEX_URL}}"
+    environment:
+      EMBENCH_LOG_TOKEN: "{{TOKEN}}"
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=2)"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s

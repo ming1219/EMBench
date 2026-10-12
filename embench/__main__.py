@@ -9,6 +9,7 @@ EMBench CLI（仓库根目录下执行）
     python -m embench run    -a replay --replay-src <轨迹目录> --job my-agent
     python -m embench score  <job_dir>                 # 只重判，不重新答题
     python -m embench report <job_dir> [<job_dir> ...] # 单 job 摘要 / 多 job 对比
+    python -m embench export-harbor -o <目录> [-t ...]   # 导出为 Harbor 题目（Docker 运行）
 """
 from __future__ import annotations
 
@@ -100,6 +101,20 @@ def cmd_score(args) -> int:
     return 0
 
 
+def cmd_export_harbor(args) -> int:
+    from .harbor.export import export_all
+    tasks = load_tasks(args.tasks)
+    if not tasks:
+        print("没有匹配的任务")
+        return 1
+    out = Path(args.out)
+    paths = export_all(tasks, load_tasks(), out, pip_index=args.pip_index)
+    print(f"已导出 {len(paths)} 道 Harbor 题目到 {out}")
+    print("运行示例：harbor run -p " + str(paths[0]) + " -a oracle")
+    print("注意：生成的题目里含本次导出的随机密钥，不要提交到公开仓库")
+    return 0
+
+
 def cmd_report(args) -> int:
     dirs = [Path(d) for d in args.job_dirs]
     text = job_markdown(dirs[0]) if len(dirs) == 1 else compare_markdown(dirs)
@@ -146,6 +161,13 @@ def main(argv=None) -> int:
     sp = sub.add_parser("score", help="用当前任务定义重判一个已有 job（不调 LLM）")
     sp.add_argument("job_dir")
     sp.set_defaults(fn=cmd_score)
+
+    sp = sub.add_parser("export-harbor", help="导出为 Harbor 题目（Docker 中运行任意 agent，服务端记录工具调用）")
+    add_tasks(sp)
+    sp.add_argument("-o", "--out", required=True, help="输出目录（每道题一个 Harbor 题目目录）")
+    sp.add_argument("--pip-index", default="https://pypi.org/simple",
+                    help="容器内 pip 源，国内可用 https://pypi.tuna.tsinghua.edu.cn/simple")
+    sp.set_defaults(fn=cmd_export_harbor)
 
     sp = sub.add_parser("report", help="单 job 摘要或多 job 对比")
     sp.add_argument("job_dirs", nargs="+")

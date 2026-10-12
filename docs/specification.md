@@ -13,6 +13,7 @@ python -m embench registry [--write]                 # verify / rebuild registry
 python -m embench run -a oracle|nop|replay [...]     # run one grading job
 python -m embench score  <job_dir>                   # regrade an existing job with the current task definitions
 python -m embench report <job_dir> [<job_dir> ...]   # single-job summary / multi-job comparison
+python -m embench export-harbor -o <dir> [-t FILTER] [--pip-index URL]   # export as Harbor tasks (Docker)
 python -m unittest discover -s embench/tests -t .    # unit tests
 ```
 
@@ -218,3 +219,35 @@ python -m unittest discover -s embench/tests -t .
 | registry.json matches the directories and its hashes are current | A stale task index |
 
 These checks prove that the reference passes and that the listed kinds of mistakes are caught. They **do not** prove that every wrong answer is caught: a task with loosely written checks still passes the self-check. Add counterexamples under `solution/negatives/` for the mistakes you care about.
+
+## 9. Harbor integration (Docker)
+
+`python -m embench export-harbor -o <dir>` turns each EMBench task into a self-contained [Harbor](https://pypi.org/project/harbor/) task (tested with Harbor 0.23.0), so any Harbor agent can take it in Docker.
+
+```
+<dir>/<family>__<instance>/
+├── task.toml                 Harbor config: MCP server URL, timeouts, grading-only token in [verifier.env]
+├── instruction.md            the original instruction + "write your final answer to /app/answer.md"
+├── environment/
+│   ├── Dockerfile            agent container (python:3.12-slim pinned by digest, mcp 1.27.2, rdkit 2026.3.3)
+│   ├── docker-compose.yaml   agent container + tool-server container
+│   └── tool-server/          fixture MCP server: tool_server.py, tools.json, fixtures.json, embench/ (grading code copy)
+├── tests/
+│   ├── test.sh               runs grade.py
+│   ├── grade.py              server-side call log + /app/answer.md → EMBench checks → reward
+│   ├── embench/              grading code copy
+│   └── embench_tasks/<id>/   the EMBench task definition (no solution/)
+└── solution/
+    ├── solve.sh, solve.py    reference solution: calls the tools over MCP, writes the reference answer
+    └── trajectory.json
+```
+
+**Tool server.** Serves the tools described in `embench/harbor/tools.json` over MCP (streamable HTTP, `http://tool-server:8000/mcp`). Each call is answered by replaying a recorded result (`fixtures.json`): fixtures from the task's own reference trajectory first, then from all tasks' reference trajectories, preferring the fixture that declares the most arguments. A call matches a fixture when every argument the fixture declares is equal under EMBench's normalization (equivalent SMILES, lists sent as JSON strings, etc.); extra arguments are ignored. Unmatched calls return `{"error_type": "fixture_missing", ...}`. Optional parameters are exposed with a `null` default so that only the arguments the agent actually sent are recorded.
+
+**Evidence.** The tool server records every call (tool, arguments, result) on its own side. The agent runs in a different container and can neither read nor change this log. The grader fetches it from `GET /embench/calls` with a token that is injected only in the verification phase (`[verifier.env] EMBENCH_LOG_TOKEN`). A fresh random token is generated on every export, so generated tasks must not be published. If the log cannot be fetched, the task scores 0 (`missing_evidence: ["tool_call_log"]`).
+
+**Reward.** `grade.py` writes `/logs/verifier/reward.txt` (0 or 1, Harbor's headline reward) and `/logs/verifier/embench_reward.json` (the full EMBench reward with dimensions and per-check details).
+
+**Known limits.**
+- Fixture tools return recorded results only; they test tool use, not real chemistry predictions.
+- The grader runs in the agent's container (Harbor's shared verifier mode). The evidence is protected, but an agent with root access could in principle tamper with the container's Python packages. Harbor's separate verifier container (`environment_mode = "separate"` with `collect`) is the planned hardening.

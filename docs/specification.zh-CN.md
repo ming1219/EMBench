@@ -13,6 +13,7 @@ python -m embench registry [--write]               # 校验 / 重建 registry.js
 python -m embench run -a oracle|nop|replay [...]   # 跑一次阅卷（job）
 python -m embench score  <job目录>                 # 用当前题目定义重判已有 job
 python -m embench report <job目录> [<job目录> ...] # 单 job 摘要 / 多 job 对比
+python -m embench export-harbor -o <目录> [-t 筛选] [--pip-index 地址]   # 导出为 Harbor 题目（Docker）
 python -m unittest discover -s embench/tests -t .  # 单元测试
 ```
 
@@ -218,3 +219,35 @@ python -m unittest discover -s embench/tests -t .
 | registry.json 与目录一一对应且 hash 最新 | 题库索引过期 |
 
 这些自检证明的是：参考答案能通过，以及上面列出的几类错法会被抓出。它们**不能**证明所有错误答案都会被判错：检查写得太松的题照样能通过自检。你关心哪些错法，就把对应的反例放进 `solution/negatives/`。
+
+## 9. Harbor 集成（Docker）
+
+`python -m embench export-harbor -o <目录>` 把每道 EMBench 题目转成一个自包含的 [Harbor](https://pypi.org/project/harbor/) 题目（已用 Harbor 0.23.0 验证），任何 Harbor agent 都能在 Docker 里做题。
+
+```
+<目录>/<family>__<instance>/
+├── task.toml                 Harbor 配置：MCP 服务地址、超时、只在判分阶段注入的密钥（[verifier.env]）
+├── instruction.md            原题 + 「把最终回答写入 /app/answer.md」
+├── environment/
+│   ├── Dockerfile            agent 容器（python:3.12-slim 按 digest 固定、mcp 1.27.2、rdkit 2026.3.3）
+│   ├── docker-compose.yaml   agent 容器 + tool-server 容器
+│   └── tool-server/          模拟工具服务：tool_server.py、tools.json、fixtures.json、embench/（判分代码副本）
+├── tests/
+│   ├── test.sh               运行 grade.py
+│   ├── grade.py              服务端调用记录 + /app/answer.md → EMBench 检查 → 成绩
+│   ├── embench/              判分代码副本
+│   └── embench_tasks/<id>/   EMBench 题目定义（不含 solution/）
+└── solution/
+    ├── solve.sh, solve.py    参考解：通过 MCP 调用工具，写出参考回答
+    └── trajectory.json
+```
+
+**工具服务**：按 `embench/harbor/tools.json` 通过 MCP（streamable HTTP，`http://tool-server:8000/mcp`）提供工具。每次调用回放已记录的结果（`fixtures.json`）：先找本题参考轨迹里的记录，再找所有题目参考轨迹里的记录，优先声明参数最多的那条。调用与记录匹配的条件：记录声明的每个参数，按 EMBench 的归一规则都相等（SMILES 写法不同、列表传成 JSON 字符串等视为相同）；多传的参数不影响匹配。匹配不到时返回 `{"error_type": "fixture_missing", ...}`。可选参数的默认值对外显示为 `null`，这样记录里只有 agent 真正传入的参数。
+
+**证据**：工具服务在自己这一侧记录每次调用（工具、参数、结果）。agent 在另一个容器里，读不到也改不了这份记录。判分程序通过 `GET /embench/calls` 取记录，需要的密钥只在判分阶段注入（`[verifier.env] EMBENCH_LOG_TOKEN`）。每次导出都会生成新的随机密钥，所以生成的题目不能公开发布。取不到记录时整题判 0 分（`missing_evidence: ["tool_call_log"]`）。
+
+**成绩**：`grade.py` 写出 `/logs/verifier/reward.txt`（0 或 1，Harbor 的主成绩）和 `/logs/verifier/embench_reward.json`（完整的 EMBench 成绩，含各维度和每项检查的明细）。
+
+**已知限制**
+- 模拟工具只返回记录过的结果，检验的是工具调用行为，不是真实的化学预测能力。
+- 判分程序运行在 agent 的容器里（Harbor 的共享判分模式）。证据本身是受保护的，但有 root 权限的 agent 理论上可以篡改容器里的 Python 包。计划的加固方式是改用 Harbor 的独立判分容器（`environment_mode = "separate"` 加 `collect`）。

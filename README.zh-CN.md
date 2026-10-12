@@ -21,7 +21,7 @@ EMBench 检查这个过程做得对不对：
 3. [示例题库](#3-示例题库)
 4. [第一次上手（约 10 分钟）](#4-第一次上手约-10-分钟)
 5. [看懂成绩单](#5-看懂成绩单)
-6. [给你自己的 AI 阅卷](#6-给你自己的-ai-阅卷)
+6. [给你自己的 AI 阅卷](#6-给你自己的-ai-阅卷)（含[在 Docker 里让真实 AI 做题](#64-在-docker-里让真实-ai-做题harbor)）
 7. [阅卷规则：怎样才算答对](#7-阅卷规则怎样才算答对)
 8. [你的 AI 需要会用哪些工具](#8-你的-ai-需要会用哪些工具)
 9. [出一道新题](#9-出一道新题)
@@ -280,6 +280,40 @@ python -m embench run -a replay --replay-src D:\我的答题卡 --job 我的AI�
 | `-t name2smiles/tnt` | 只阅一道题 |
 
 想看全部题号：`python -m embench list`
+
+### 6.4 在 Docker 里让真实 AI 做题（Harbor）
+
+除了自己写答题卡，也可以让 EMBench 借助 [Harbor](https://pypi.org/project/harbor/) 评测框架，在 Docker 里让真实的 AI 来做题。这种方式更可信：AI 调用了哪些工具，由工具服务自己记录，AI 没法伪造。
+
+**需要准备**：[Docker Desktop](https://www.docker.com/products/docker-desktop/)（并启动），以及装在单独 Python 3.12+ 环境里的 Harbor：
+
+```
+python -m venv harbor-env
+harbor-env\Scripts\pip install harbor==0.23.0
+```
+
+（macOS / Linux 用 `harbor-env/bin/pip install harbor==0.23.0`）
+
+**第 1 步：把 EMBench 题目转成 Harbor 题目**
+
+```
+python -m embench export-harbor -t ob-kj/tnt -o harbor_tasks
+```
+
+不写 `-t` 就转换全部题目。国内网络建议加上 `--pip-index https://pypi.tuna.tsinghua.edu.cn/simple`，让容器里装包更快。
+
+**第 2 步：运行**
+
+```
+harbor-env\Scripts\harbor run -p harbor_tasks\ob-kj__tnt -a oracle
+harbor-env\Scripts\harbor run -p harbor_tasks\ob-kj__tnt -a nop
+```
+
+第一条用参考答案做题，应该得 **1.0** 分；第二条什么都不做，应该得 **0.0** 分。第一次运行要构建两个 Docker 镜像，需要几分钟，之后会复用。要测真实的 AI，换成 Harbor 自带的 agent 并指定模型，例如 `-a terminus-2 -m <模型>`（见 `harbor run --help`）。
+
+**里面发生了什么**：每道题启动两个容器。AI 在其中一个里做题；另一个是**工具服务**，按题目里记录好的结果回答工具调用（不运行真实的化学模型），并记录每一次调用。AI 要把最终回答写到 `/app/answer.md`。做完后，阅卷程序读取工具服务的调用记录和回答文件，用题目的检查项判分。
+
+> 限制：工具服务只知道题目里记录过的结果。AI 用没记录过的参数调用工具时，会收到「没有记录的结果」的错误。这能检验 AI 会不会正确使用工具，但检验不了真实的化学预测能力。
 
 ## 7. 阅卷规则：怎样才算答对
 

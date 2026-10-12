@@ -21,7 +21,7 @@ The repository ships a **seed set of chemistry tasks**, migrated from earlier ex
 3. [The seed task set](#3-the-seed-task-set)
 4. [Getting started (about 10 minutes)](#4-getting-started-about-10-minutes)
 5. [Reading the report card](#5-reading-the-report-card)
-6. [Grading your own AI](#6-grading-your-own-ai)
+6. [Grading your own AI](#6-grading-your-own-ai) (including [running a real AI in Docker](#64-running-a-real-ai-in-docker-harbor))
 7. [Grading rules: what counts as correct](#7-grading-rules-what-counts-as-correct)
 8. [Tools your AI needs to provide](#8-tools-your-ai-needs-to-provide)
 9. [Writing a new task](#9-writing-a-new-task)
@@ -275,6 +275,40 @@ python -m embench run -a replay --replay-src D:\my-answer-sheets --job my-ai-fir
 | `-t name2smiles/tnt` | A single task |
 
 To list all tasks: `python -m embench list`
+
+### 6.4 Running a real AI in Docker (Harbor)
+
+Instead of writing answer sheets yourself, you can let EMBench run a real AI for you inside Docker, using the [Harbor](https://pypi.org/project/harbor/) evaluation framework. This is also the more trustworthy way: the record of which tools the AI called is kept by the tool server itself, so the AI cannot fake it.
+
+**What you need**: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (running), and Harbor installed in its own Python 3.12+ environment:
+
+```
+python -m venv harbor-env
+harbor-env\Scripts\pip install harbor==0.23.0
+```
+
+(on macOS / Linux: `harbor-env/bin/pip install harbor==0.23.0`)
+
+**Step 1: turn EMBench tasks into Harbor tasks**
+
+```
+python -m embench export-harbor -t ob-kj/tnt -o harbor_tasks
+```
+
+Leave out `-t` to export all tasks. In mainland China, add `--pip-index https://pypi.tuna.tsinghua.edu.cn/simple` so the containers install packages faster.
+
+**Step 2: run**
+
+```
+harbor-env\Scripts\harbor run -p harbor_tasks\ob-kj__tnt -a oracle
+harbor-env\Scripts\harbor run -p harbor_tasks\ob-kj__tnt -a nop
+```
+
+The first command replays the model answer and should score **1.0**; the second does nothing and should score **0.0**. The first run builds two Docker images and takes a few minutes; later runs reuse them. To test a real AI, use one of Harbor's agents with your model, e.g. `-a terminus-2 -m <model>` (see `harbor run --help`).
+
+**What happens inside**: each task starts two containers. The AI works in one of them. The other is a **tool server** that answers tool calls with results recorded in the task (it doesn't run real chemistry models) and keeps a log of every call. The AI must write its final answer to `/app/answer.md`. When the AI is done, the grader reads the tool server's log and the answer file and grades them with the task's checks.
+
+> Limitation: the tool server only knows the results recorded in the tasks. If the AI calls a tool with arguments nobody recorded, it gets an error saying "no recorded result". This tests whether the AI uses the tools correctly; it does not test real chemistry predictions.
 
 ## 7. Grading rules: what counts as correct
 

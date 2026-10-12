@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "description": "Public interface of the chemistry tools used by the EMBench seed tasks. Only names, parameters and defaults are described here; in Harbor tasks the tools are served by a fixture server that replays recorded results.",
+  "tools": [
+    {
+      "name": "nameToSmiles",
+      "description": "Convert a chemical name (common name, abbreviation or IUPAC name) into a SMILES string.",
+      "parameters": [
+        {"name": "name", "type": "string", "required": true, "description": "Chemical name, e.g. TNT or CL-20."}
+      ]
+    },
+    {
+      "name": "validateSmiles",
+      "description": "Check whether a SMILES string is valid; returns validity, formula, atom and bond counts.",
+      "parameters": [
+        {"name": "smiles", "type": "string", "required": true, "description": "SMILES string to validate."}
+      ]
+    },
+    {
+      "name": "drawMolecule",
+      "description": "Draw a 2D structure image of a molecule.",
+      "parameters": [
+        {"name": "smiles", "type": "string", "required": true, "description": "SMILES string of the molecule."},
+        {"name": "width", "type": "integer", "required": false, "default": 400, "description": "Image width in pixels."},
+        {"name": "height", "type": "integer", "required": false, "default": 400, "description": "Image height in pixels."}
+      ]
+    },
+    {
+      "name": "smilesTo3D",
+      "description": "Generate 3D atomic coordinates for a molecule.",
+      "parameters": [
+        {"name": "smiles", "type": "string", "required": true, "description": "SMILES string of the molecule."}
+      ]
+    },
+    {
+      "name": "batchPredictProperties",
+      "description": "Predict properties for a batch of molecules. Property codes: Density, DetoD, DetoP, DetoQ, DetoT, DetoV, HOF_S, Td, BDE.",
+      "parameters": [
+        {"name": "smiles_list", "type": "string_list", "required": true, "description": "List of SMILES strings."},
+        {"name": "properties", "type": "string_list", "required": false, "default": null, "description": "Property codes to predict; all if omitted."}
+      ]
+    },
+    {
+      "name": "calculateOxygenBalance",
+      "description": "Compute the oxygen balance (OB_CO, OB_CO2) of molecules.",
+      "parameters": [
+        {"name": "smiles_list", "type": "string_list", "required": true, "description": "List of SMILES strings."}
+      ]
+    },
+    {
+      "name": "calculateKJ",
+      "description": "Compute detonation parameters with the Kamlet-Jacobs equations. Pass smiles to predict density and heat of formation automatically, or pass density, hof_s and formula directly.",
+      "parameters": [
+        {"name": "smiles", "type": "string", "required": false, "default": null, "description": "SMILES string (automatic prediction mode)."},
+        {"name": "density", "type": "number", "required": false, "default": null, "description": "Density in g/cm3 (direct mode)."},
+        {"name": "hof_s", "type": "number", "required": false, "default": null, "description": "Solid-state heat of formation in kJ/mol (direct mode)."},
+        {"name": "formula", "type": "string", "required": false, "default": null, "description": "Molecular formula (direct mode)."}
+      ]
+    },
+    {
+      "name": "generateAndPredict",
+      "description": "Generate new candidate molecules and optionally predict their properties.",
+      "parameters": [
+        {"name": "num", "type": "integer", "required": false, "default": 10, "description": "Number of molecules to generate."},
+        {"name": "use_em", "type": "boolean", "required": false, "default": true, "description": "Use the domain-specific generator (true) or the general one (false)."},
+        {"name": "properties", "type": "string_list", "required": false, "default": null, "description": "Property codes to predict for the generated molecules."},
+        {"name": "skip_prediction", "type": "boolean", "required": false, "default": false, "description": "Only generate SMILES, without property prediction."}
+      ]
+    },
+    {
+      "name": "predictRetrosynthesis",
+      "description": "Retrosynthesis analysis: search synthesis routes for a molecule.",
+      "parameters": [
+        {"name": "smiles", "type": "string", "required": true, "description": "SMILES string of the target molecule."},
+        {"name": "max_routes", "type": "integer", "required": false, "default": 5, "description": "Maximum number of routes to return."},
+        {"name": "time_limit", "type": "integer", "required": false, "default": 120, "description": "Search time limit in seconds."}
+      ]
+    },
+    {
+      "name": "magusStatus",
+      "description": "Report whether the crystal-structure generation module is available.",
+      "parameters": []
+    },
+    {
+      "name": "magusGenerate",
+      "description": "Generate crystal structures for a chemical formula.",
+      "parameters": [
+        {"name": "formula", "type": "string", "required": true, "description": "Chemical formula, e.g. ZnO."},
+        {"name": "number", "type": "integer", "required": false, "default": 10, "description": "Number of structures to generate."},
+        {"name": "spacegroup", "type": "string", "required": false, "default": null, "description": "Space group constraint."},
+        {"name": "structure_type", "type": "string", "required": false, "default": "bulk", "description": "Structure type."}
+      ]
+    }
+  ]
+}

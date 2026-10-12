@@ -3,3 +3,6 @@ embench/jobs/
 __pycache__/
 *.pyc
 .venv/
+
+# Generated Harbor tasks (contain a per-export grading token; never commit)
+harbor_tasks/
