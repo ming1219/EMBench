@@ -285,13 +285,13 @@ python -m embench run -a replay --replay-src D:\我的答题卡 --job 我的AI�
 
 除了自己写答题卡，EMBench 还可以把每道题导出成**容器化题目**，让真实的 AI 在 Docker 里做题。这种方式更可信：AI 调用了哪些工具，由工具服务自己记录，AI 没法伪造。
 
-**里面发生了什么**：每道题启动两个容器。AI 在其中一个里做题；另一个是**工具服务**，按题目里记录好的结果回答工具调用（不运行真实的化学模型），并在自己这一侧记录每一次调用。AI 要把最终回答写到 `/app/answer.md`。做完后，阅卷程序用一把只在阅卷时才存在的密钥取回工具服务的调用记录，再读取回答文件，用题目的检查项判分。取不到记录就判 0 分。
+**里面发生了什么**：每道题启动两个容器。AI 在其中一个里做题；另一个是**工具服务**，负责回答工具调用（默认按题目里记录好的结果回答；加上 `--tools open` 时，第 8 章的 5 个公开工具真实运行），并在自己这一侧记录每一次调用。AI 要把最终回答写到 `/app/answer.md`。做完后，阅卷程序用一把只在阅卷时才存在的密钥取回工具服务的调用记录，再读取回答文件，用题目的检查项判分。取不到记录就判 0 分。
 
 **已在 Docker 中端到端验证**：参考答案得 **1.0** 分，白卷得 **0.0** 分。
 
 **需要准备**：[Docker Desktop](https://www.docker.com/products/docker-desktop/)（并启动）。导出和运行的具体命令见[技术规范](docs/specification.zh-CN.md)第 9 章。
 
-> 限制：工具服务只知道题目里记录过的结果。AI 用没记录过的参数调用工具时，会收到「没有记录的结果」的错误。这能检验 AI 会不会正确使用工具，但检验不了真实的化学预测能力。
+> 限制：对于回放记录结果的工具，工具服务只知道题目里记录过的结果。AI 用没记录过的参数调用这类工具时，会收到「没有记录的结果」的错误。这能检验 AI 会不会正确使用工具，但检验不了真实的化学预测能力。
 
 ## 7. 阅卷规则：怎样才算答对
 
@@ -338,7 +338,21 @@ python -m embench run -a replay --replay-src D:\我的答题卡 --job 我的AI�
 
 性质代号：`Density` 密度、`DetoD` 爆速、`DetoP` 爆压、`DetoQ` 爆热、`DetoT` 爆温、`DetoV` 爆容、`HOF_S` 固态生成焓、`Td` 热分解温度、`BDE` 键解离能。
 
-> 这些工具的实现目前**没有**包含在本仓库中。你可以用自己的实现，只要工具名和参数一致即可；
+**公开工具**：其中 5 个工具在本仓库里给出了真实实现，只用开源库（RDKit，名字查询用 PubChem），代码在 `embench/tools/`：
+`nameToSmiles`、`validateSmiles`、`drawMolecule`、`smilesTo3D`、`calculateOxygenBalance`。
+它们算出的结果与题目里记录的结果一致；测试 `embench/tests/test_open_tools.py` 会把每一次记录过的调用重新算一遍并比对。
+
+另外 6 个（`calculateKJ`、`batchPredictProperties`、`generateAndPredict`、`predictRetrosynthesis`、`magusStatus`、`magusGenerate`）依赖训练好的模型，或依赖许可证不允许再分发的代码，改为**回放**题目里记录好的结果，所以每道题仍然能完整跑通。
+
+**给你自己的 AI 启动工具服务**（需要 `pip install mcp==1.27.2 rdkit`）：
+
+```
+python -m embench serve-tools --port 8000
+```
+
+它会在 `http://127.0.0.1:8000/mcp` 通过 MCP 提供全部 11 个工具：5 个公开工具真实运行，另外 6 个回放记录的结果。把你的 AI 连到这个地址做题，再按第 6 章给轨迹判分即可。加上 `--log calls.jsonl` 可以保存每一次调用的记录。
+
+> 你也可以接入自己的实现，只要工具名和参数一致即可；
 > 想知道某个工具应该返回什么，可以参考对应题目 `solution/trajectory.json` 中的 `result`。
 
 ## 9. 出一道新题

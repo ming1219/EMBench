@@ -13,7 +13,8 @@ python -m embench registry [--write]               # 校验 / 重建 registry.js
 python -m embench run -a oracle|nop|replay [...]   # 跑一次阅卷（job）
 python -m embench score  <job目录>                 # 用当前题目定义重判已有 job
 python -m embench report <job目录> [<job目录> ...] # 单 job 摘要 / 多 job 对比
-python -m embench export-harbor -o <目录> [-t 筛选] [--pip-index 地址]   # 导出为 Harbor 题目（Docker）
+python -m embench export-harbor -o <目录> [-t 筛选] [--pip-index 地址] [--tools fixture|open]   # 导出为 Harbor 题目（Docker）
+python -m embench serve-tools [--tools open|fixture] [--host 地址] [--port 端口] [--token 密钥] [--log 文件]   # 本地 MCP 工具服务
 python -m unittest discover -s embench/tests -t .  # 单元测试
 ```
 
@@ -242,12 +243,14 @@ python -m unittest discover -s embench/tests -t .
     └── trajectory.json
 ```
 
-**工具服务**：按 `embench/harbor/tools.json` 通过 MCP（streamable HTTP，`http://tool-server:8000/mcp`）提供工具。每次调用回放已记录的结果（`fixtures.json`）：先找本题参考轨迹里的记录，再找所有题目参考轨迹里的记录，优先声明参数最多的那条。调用与记录匹配的条件：记录声明的每个参数，按 EMBench 的归一规则都相等（SMILES 写法不同、列表传成 JSON 字符串等视为相同）；多传的参数不影响匹配。匹配不到时返回 `{"error_type": "fixture_missing", ...}`。可选参数的默认值对外显示为 `null`，这样记录里只有 agent 真正传入的参数。
+**工具服务**：按 `embench/harbor/tools.json` 通过 MCP（streamable HTTP，`http://tool-server:8000/mcp`）提供工具。每次调用回放已记录的结果（`fixtures.json`）：先找本题参考轨迹里的记录，再找所有题目参考轨迹里的记录，优先声明参数最多的那条。调用与记录匹配的条件：记录声明的每个参数，按 EMBench 的归一规则都相等（SMILES 写法不同、列表传成 JSON 字符串等视为相同）；多传的参数不影响匹配。匹配不到时返回 `{"error_type": "fixture_missing", ...}`。全局记录池里，带 `generation` 标签的题目排在最后，真实记录的结果优先于合成的结果。使用 `--tools open`（compose 文件里 `EMBENCH_TOOLS=open`）时，5 个公开工具（`embench/tools/`）真实计算，不再回放；其余工具仍然回放。可选参数的默认值对外显示为 `null`，这样记录里只有 agent 真正传入的参数。
 
 **证据**：工具服务在自己这一侧记录每次调用（工具、参数、结果）。agent 在另一个容器里，读不到也改不了这份记录。判分程序通过 `GET /embench/calls` 取记录，需要的密钥只在判分阶段注入（`[verifier.env] EMBENCH_LOG_TOKEN`）。每次导出都会生成新的随机密钥，所以生成的题目不能公开发布。取不到记录时整题判 0 分（`missing_evidence: ["tool_call_log"]`）。
 
 **成绩**：`grade.py` 写出 `/logs/verifier/reward.txt`（0 或 1，Harbor 的主成绩）和 `/logs/verifier/embench_reward.json`（完整的 EMBench 成绩，含各维度和每项检查的明细）。
 
+**公开工具**：`embench/tools/open_tools.py` 只用 RDKit 和标准库实现 `nameToSmiles`（先查内置常用名，再查 PubChem PUG REST）、`validateSmiles`、`drawMolecule`、`smilesTo3D`（ETKDGv3，随机种子 42，再做 MMFF 优化）和 `calculateOxygenBalance`（OB_CO2 = -1600 (2C + H/2 - O) / M，OB_CO = -1600 (C + H/2 - O) / M，保留 4 位小数）。返回格式与记录的结果一致；`embench/tests/test_open_tools.py` 会重算每一次记录过的调用（PubChem 检查需设置 `EMBENCH_NETWORK_TESTS=1` 才运行）。`python -m embench serve-tools` 在本地运行同一个工具服务（默认 `--tools open`、`127.0.0.1:8000`），使用全局记录池，任何 MCP 客户端都能在 Docker 之外做题；带请求头 `X-Embench-Token` 访问 `GET /embench/calls` 可取回调用记录。
+
 **已知限制**
-- 模拟工具只返回记录过的结果，检验的是工具调用行为，不是真实的化学预测能力。
+- 回放的工具只返回记录过的结果，检验的是工具调用行为，不是真实的化学预测能力。公开模式下，`nameToSmiles` 遇到内置列表以外的名字会查询 PubChem，此时工具服务容器需要能联网。
 - 判分程序运行在 agent 的容器里（Harbor 的共享判分模式）。证据本身是受保护的，但有 root 权限的 agent 理论上可以篡改容器里的 Python 包。计划的加固方式是改用 Harbor 的独立判分容器（`environment_mode = "separate"` 加 `collect`）。

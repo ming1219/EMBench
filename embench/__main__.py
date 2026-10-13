@@ -9,6 +9,7 @@ EMBench CLI（仓库根目录下执行）
     python -m embench run    -a replay --replay-src <轨迹目录> --job my-agent
     python -m embench score  <job_dir>                 # 只重判，不重新答题
     python -m embench report <job_dir> [<job_dir> ...] # 单 job 摘要 / 多 job 对比
+    python -m embench serve-tools [--tools open]       # 本机启动 MCP 工具服务
     python -m embench export-harbor -o <目录> [-t ...]   # 导出为 Harbor 题目（Docker 运行）
 """
 from __future__ import annotations
@@ -108,10 +109,42 @@ def cmd_export_harbor(args) -> int:
         print("没有匹配的任务")
         return 1
     out = Path(args.out)
-    paths = export_all(tasks, load_tasks(), out, pip_index=args.pip_index)
+    paths = export_all(tasks, load_tasks(), out, pip_index=args.pip_index, tools=args.tools)
     print(f"已导出 {len(paths)} 道 Harbor 题目到 {out}")
     print("运行示例：harbor run -p " + str(paths[0]) + " -a oracle")
     print("注意：生成的题目里含本次导出的随机密钥，不要提交到公开仓库")
+    return 0
+
+
+def cmd_serve_tools(args) -> int:
+    """在本机启动 MCP 工具服务：公开工具真实计算（--tools open），其余工具回放种子题记录的结果。"""
+    import json as _json
+    import os
+    import runpy
+    import secrets
+    import tempfile
+    from .harbor.export import global_fixture_steps
+    from .harbor.fixtures import build_fixtures
+
+    try:
+        import mcp  # noqa: F401
+    except ImportError:
+        print("需要先安装 MCP：pip install mcp==1.27.2")
+        return 1
+    steps = global_fixture_steps(load_tasks())
+    fixtures = Path(tempfile.mkdtemp()) / "fixtures.json"
+    fixtures.write_text(_json.dumps(build_fixtures([], steps), ensure_ascii=False), encoding="utf-8")
+    runtime = Path(__file__).resolve().parent / "harbor" / "runtime"
+    token = args.token or secrets.token_hex(16)
+    os.environ.update({
+        "EMBENCH_TOOLS": args.tools, "EMBENCH_FIXTURES": str(fixtures),
+        "EMBENCH_TOOLS_JSON": str(runtime.parent / "tools.json"), "EMBENCH_LOG_TOKEN": token,
+        "EMBENCH_HOST": args.host, "EMBENCH_PORT": str(args.port),
+        "EMBENCH_CALL_LOG": str(Path(args.log or (Path(tempfile.gettempdir()) / "embench_calls.jsonl"))),
+    })
+    print(f"MCP 工具服务：http://{args.host}:{args.port}/mcp（模式：{args.tools}）")
+    print(f"调用记录：GET http://{args.host}:{args.port}/embench/calls，请求头 X-Embench-Token: {token}")
+    runpy.run_path(str(runtime / "tool_server.py"), run_name="__main__")
     return 0
 
 
@@ -167,7 +200,17 @@ def main(argv=None) -> int:
     sp.add_argument("-o", "--out", required=True, help="输出目录（每道题一个 Harbor 题目目录）")
     sp.add_argument("--pip-index", default="https://pypi.org/simple",
                     help="容器内 pip 源，国内可用 https://pypi.tuna.tsinghua.edu.cn/simple")
+    sp.add_argument("--tools", choices=["fixture", "open"], default="fixture",
+                    help="fixture：全部工具回放记录的结果；open：公开工具（见 embench/tools）真实计算，其余回放")
     sp.set_defaults(fn=cmd_export_harbor)
+
+    sp = sub.add_parser("serve-tools", help="在本机启动 MCP 工具服务（公开工具真实计算 + 其余回放）")
+    sp.add_argument("--tools", choices=["fixture", "open"], default="open")
+    sp.add_argument("--host", default="127.0.0.1")
+    sp.add_argument("--port", type=int, default=8000)
+    sp.add_argument("--token", default=None, help="读取调用记录用的密钥（缺省随机生成）")
+    sp.add_argument("--log", default=None, help="调用记录文件（缺省在系统临时目录）")
+    sp.set_defaults(fn=cmd_serve_tools)
 
     sp = sub.add_parser("report", help="单 job 摘要或多 job 对比")
     sp.add_argument("job_dirs", nargs="+")

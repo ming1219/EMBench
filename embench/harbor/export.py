@@ -41,7 +41,17 @@ ANSWER_NOTE = ("\n\n---\n\n完成后，请把你给用户的完整最终回答�
                "When you are done, write your complete final answer to the user into `/app/answer.md`. "
                "The tools are provided by the `embench-tools` MCP server.\n")
 # 判分代码副本只需要这些（不含 agents / CLI / 题库）
-VENDORED = ["__init__.py", "core", "harbor/__init__.py", "harbor/fixtures.py"]
+VENDORED = ["__init__.py", "core", "harbor/__init__.py", "harbor/fixtures.py", "tools/__init__.py", "tools/open_tools.py"]
+
+
+def global_fixture_steps(tasks: list[Task]) -> list[dict]:
+    """所有题目参考轨迹里的工具调用，作为全局 fixture。
+
+    生成类题目（tag 含 generation）的参考结果是为造题合成的示意值（例如候选分子的 KJ 结果），
+    排在最后：同一工具同一参数有多条记录时，优先命中真实计算得到的结果。
+    """
+    ordered = sorted(tasks, key=lambda t: "generation" in t.meta.get("tags", []))
+    return [s.to_dict() for t in ordered for s in Trajectory.load(t.solution_path).steps]
 
 
 def harbor_name(task: Task) -> str:
@@ -115,7 +125,7 @@ def _task_toml(task: Task, token: str) -> str:
 
 
 def export_task(task: Task, out_dir: Path, global_steps: list[dict], token: str,
-                pip_index: str = DEFAULT_PIP_INDEX) -> Path:
+                pip_index: str = DEFAULT_PIP_INDEX, tools: str = "fixture") -> Path:
     d = out_dir / harbor_name(task)
     if d.exists():
         shutil.rmtree(d)
@@ -128,7 +138,7 @@ def export_task(task: Task, out_dir: Path, global_steps: list[dict], token: str,
     env = d / "environment"
     main_df = _render("Dockerfile.main").replace(f"PIP_INDEX_URL={DEFAULT_PIP_INDEX}", f"PIP_INDEX_URL={pip_index}")
     _write(env / "Dockerfile", main_df)
-    _write(env / "docker-compose.yaml", _render("docker-compose.yaml", TOKEN=token, PIP_INDEX_URL=pip_index))
+    _write(env / "docker-compose.yaml", _render("docker-compose.yaml", TOKEN=token, PIP_INDEX_URL=pip_index, TOOLS=tools))
     ts = env / "tool-server"
     _write(ts / "Dockerfile", _render("Dockerfile.tools"))
     shutil.copy2(RUNTIME / "tool_server.py", ts / "tool_server.py")
@@ -151,16 +161,16 @@ def export_task(task: Task, out_dir: Path, global_steps: list[dict], token: str,
 
 
 def export_all(tasks: list[Task], all_tasks: list[Task], out_dir: Path, token: str | None = None,
-               pip_index: str = DEFAULT_PIP_INDEX) -> list[Path]:
+               pip_index: str = DEFAULT_PIP_INDEX, tools: str = "fixture") -> list[Path]:
     """导出 tasks；fixture 全局表取自 all_tasks 的全部参考轨迹（agent 走别的合理路径时也能拿到结果）。
 
     每次导出生成一个新的随机密钥，所有题目共用；生成的题目目录不应提交到公开仓库。
     """
     token = token or secrets.token_hex(16)
-    global_steps = [s.to_dict() for t in all_tasks for s in Trajectory.load(t.solution_path).steps]
+    global_steps = global_fixture_steps(all_tasks)
     out_dir.mkdir(parents=True, exist_ok=True)
-    paths = [export_task(t, out_dir, global_steps, token, pip_index) for t in tasks]
+    paths = [export_task(t, out_dir, global_steps, token, pip_index, tools) for t in tasks]
     manifest = {"embench_tasks": [t.id for t in tasks], "harbor_tasks": [p.name for p in paths],
-                "pip_index": pip_index}
+                "pip_index": pip_index, "tools": tools}
     _write(out_dir / "embench_harbor_manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
     return paths

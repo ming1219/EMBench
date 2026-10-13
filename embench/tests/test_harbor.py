@@ -45,6 +45,12 @@ class TestFixtures(unittest.TestCase):
         self.assertEqual(out["error_type"], FIXTURE_MISSING)
         self.assertEqual(json.loads(answer_call(self.fx, "nameToSmiles", {"name": "TNT"}))["error_type"], FIXTURE_MISSING)
 
+    def test_global_pool_prefers_real_results_over_synthetic_ones(self):
+        from embench.harbor.export import global_fixture_steps
+        fx = build_fixtures([], global_fixture_steps(load_tasks()))
+        kj = json.loads(answer_call(fx, "calculateKJ", {"smiles": TNT_A}))
+        self.assertEqual(kj["DetoD"], 6995)  # ob-kj/tnt 的真实计算结果，而不是设计题里的示意值
+
     def test_dedupe(self):
         fx = build_fixtures([], [{"tool": "t", "args": {"a": 1}, "result": "x"}] * 3)
         self.assertEqual(len(fx["global"]), 1)

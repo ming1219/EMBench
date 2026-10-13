@@ -12,6 +12,7 @@ services:
         PIP_INDEX_URL: "{{PIP_INDEX_URL}}"
     environment:
       EMBENCH_LOG_TOKEN: "{{TOKEN}}"
+      EMBENCH_TOOLS: "{{TOOLS}}"
     expose:
       - "8000"
     healthcheck:

@@ -280,13 +280,13 @@ To list all tasks: `python -m embench list`
 
 Instead of writing answer sheets yourself, EMBench can export each task as a **container task** and let a real AI take it inside Docker. This is also the more trustworthy way: the record of which tools the AI called is kept by the tool server itself, so the AI cannot fake it.
 
-**What happens inside**: each task starts two containers. The AI works in one of them. The other is a **tool server** that answers tool calls with results recorded in the task (it doesn't run real chemistry models) and keeps a log of every call on its own side. The AI must write its final answer to `/app/answer.md`. When the AI is done, the grader fetches the tool server's log with a key that only exists at grading time, reads the answer file, and grades both with the task's checks. No log means a score of 0.
+**What happens inside**: each task starts two containers. The AI works in one of them. The other is a **tool server** that answers tool calls (by default with results recorded in the task; with `--tools open` the five open tools from chapter 8 run for real) and keeps a log of every call on its own side. The AI must write its final answer to `/app/answer.md`. When the AI is done, the grader fetches the tool server's log with a key that only exists at grading time, reads the answer file, and grades both with the task's checks. No log means a score of 0.
 
 **Verified end to end in Docker**: the model answer scores **1.0**, a blank submission scores **0.0**.
 
 **What you need**: [Docker Desktop](https://www.docker.com/products/docker-desktop/), running. The export and run commands are in chapter 9 of the [technical specification](docs/specification.md).
 
-> Limitation: the tool server only knows the results recorded in the tasks. If the AI calls a tool with arguments nobody recorded, it gets an error saying "no recorded result". This tests whether the AI uses the tools correctly; it does not test real chemistry predictions.
+> Limitation: for the tools that replay recorded results, the tool server only knows what was recorded in the tasks. If the AI calls such a tool with arguments nobody recorded, it gets an error saying "no recorded result". This tests whether the AI uses the tools correctly; it does not test real chemistry predictions.
 
 ## 7. Grading rules: what counts as correct
 
@@ -333,7 +333,21 @@ To take this exam, the AI must be able to call these tools (names must match exa
 
 Property codes: `Density`, `DetoD` detonation velocity, `DetoP` detonation pressure, `DetoQ` heat of detonation, `DetoT` detonation temperature, `DetoV` detonation volume, `HOF_S` solid-state heat of formation, `Td` decomposition temperature, `BDE` bond dissociation energy.
 
-> The tool implementations are **not** included in this repository. You can use your own, as long as the names and parameters match.
+**Open tools.** Five of these tools are implemented in this repository with open-source libraries only (RDKit, plus PubChem for names), in `embench/tools/`:
+`nameToSmiles`, `validateSmiles`, `drawMolecule`, `smilesTo3D`, `calculateOxygenBalance`.
+Their output matches the results recorded in the tasks; the test `embench/tests/test_open_tools.py` recomputes every recorded call and compares.
+
+The other six (`calculateKJ`, `batchPredictProperties`, `generateAndPredict`, `predictRetrosynthesis`, `magusStatus`, `magusGenerate`) depend on trained models or on code whose license doesn't allow redistribution. They are served by **replaying** the results recorded in the tasks, so every task can still be run end to end.
+
+**Start a tool server for your own AI** (needs `pip install mcp==1.27.2 rdkit`):
+
+```
+python -m embench serve-tools --port 8000
+```
+
+This serves all 11 tools over MCP at `http://127.0.0.1:8000/mcp`: the five open tools run for real, the other six replay recorded results. Connect your AI to this address, let it do the tasks, and grade the trajectory as in chapter 6. Add `--log calls.jsonl` to keep a log of every call.
+
+> You can also plug in your own implementations, as long as the names and parameters match.
 > To see what a tool is expected to return, look at the `result` fields in a task's `solution/trajectory.json`.
 
 ## 9. Writing a new task

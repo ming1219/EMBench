@@ -13,7 +13,8 @@ python -m embench registry [--write]                 # verify / rebuild registry
 python -m embench run -a oracle|nop|replay [...]     # run one grading job
 python -m embench score  <job_dir>                   # regrade an existing job with the current task definitions
 python -m embench report <job_dir> [<job_dir> ...]   # single-job summary / multi-job comparison
-python -m embench export-harbor -o <dir> [-t FILTER] [--pip-index URL]   # export as Harbor tasks (Docker)
+python -m embench export-harbor -o <dir> [-t FILTER] [--pip-index URL] [--tools fixture|open]   # export as Harbor tasks (Docker)
+python -m embench serve-tools [--tools open|fixture] [--host H] [--port P] [--token T] [--log FILE]   # local MCP tool server
 python -m unittest discover -s embench/tests -t .    # unit tests
 ```
 
@@ -231,7 +232,7 @@ These checks prove that the reference passes and that the listed kinds of mistak
 ├── environment/
 │   ├── Dockerfile            agent container (python:3.12-slim pinned by digest, mcp 1.27.2, rdkit 2026.3.3)
 │   ├── docker-compose.yaml   agent container + tool-server container
-│   └── tool-server/          fixture MCP server: tool_server.py, tools.json, fixtures.json, embench/ (grading code copy)
+│   └── tool-server/          MCP tool server: tool_server.py, tools.json, fixtures.json, embench/ (grading code + open tools copy)
 ├── tests/
 │   ├── test.sh               runs grade.py
 │   ├── grade.py              server-side call log + /app/answer.md → EMBench checks → reward
@@ -242,12 +243,14 @@ These checks prove that the reference passes and that the listed kinds of mistak
     └── trajectory.json
 ```
 
-**Tool server.** Serves the tools described in `embench/harbor/tools.json` over MCP (streamable HTTP, `http://tool-server:8000/mcp`). Each call is answered by replaying a recorded result (`fixtures.json`): fixtures from the task's own reference trajectory first, then from all tasks' reference trajectories, preferring the fixture that declares the most arguments. A call matches a fixture when every argument the fixture declares is equal under EMBench's normalization (equivalent SMILES, lists sent as JSON strings, etc.); extra arguments are ignored. Unmatched calls return `{"error_type": "fixture_missing", ...}`. Optional parameters are exposed with a `null` default so that only the arguments the agent actually sent are recorded.
+**Tool server.** Serves the tools described in `embench/harbor/tools.json` over MCP (streamable HTTP, `http://tool-server:8000/mcp`). Each call is answered by replaying a recorded result (`fixtures.json`): fixtures from the task's own reference trajectory first, then from all tasks' reference trajectories, preferring the fixture that declares the most arguments. A call matches a fixture when every argument the fixture declares is equal under EMBench's normalization (equivalent SMILES, lists sent as JSON strings, etc.); extra arguments are ignored. Unmatched calls return `{"error_type": "fixture_missing", ...}`. Fixtures from tasks tagged `generation` are ordered last in the global pool, so a real recorded result wins over a synthetic one. With `--tools open` (`EMBENCH_TOOLS=open` in the compose file), the five open tools (`embench/tools/`) are computed for real instead of replayed; the other tools still replay. Optional parameters are exposed with a `null` default so that only the arguments the agent actually sent are recorded.
 
 **Evidence.** The tool server records every call (tool, arguments, result) on its own side. The agent runs in a different container and can neither read nor change this log. The grader fetches it from `GET /embench/calls` with a token that is injected only in the verification phase (`[verifier.env] EMBENCH_LOG_TOKEN`). A fresh random token is generated on every export, so generated tasks must not be published. If the log cannot be fetched, the task scores 0 (`missing_evidence: ["tool_call_log"]`).
+
+**Open tools.** `embench/tools/open_tools.py` implements `nameToSmiles` (built-in common names, then PubChem PUG REST), `validateSmiles`, `drawMolecule`, `smilesTo3D` (ETKDGv3 with seed 42, then MMFF) and `calculateOxygenBalance` (OB_CO2 = -1600 (2C + H/2 - O) / M, OB_CO = -1600 (C + H/2 - O) / M, rounded to 4 decimals) with RDKit and the standard library. Return formats match the recorded results; `embench/tests/test_open_tools.py` recomputes every recorded call (PubChem checks are opt-in with `EMBENCH_NETWORK_TESTS=1`). `python -m embench serve-tools` runs the same tool server locally (default `--tools open`, `127.0.0.1:8000`) with the global fixture pool, so any MCP client can take the tasks outside Docker; `GET /embench/calls` with header `X-Embench-Token` returns the call log.
 
 **Reward.** `grade.py` writes `/logs/verifier/reward.txt` (0 or 1, Harbor's headline reward) and `/logs/verifier/embench_reward.json` (the full EMBench reward with dimensions and per-check details).
 
 **Known limits.**
-- Fixture tools return recorded results only; they test tool use, not real chemistry predictions.
+- Replayed tools return recorded results only; they test tool use, not real chemistry predictions. In open mode, `nameToSmiles` queries PubChem for names outside its built-in list, so the tool-server container needs network access for those.
 - The grader runs in the agent's container (Harbor's shared verifier mode). The evidence is protected, but an agent with root access could in principle tamper with the container's Python packages. Harbor's separate verifier container (`environment_mode = "separate"` with `collect`) is the planned hardening.
